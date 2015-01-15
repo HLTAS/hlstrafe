@@ -33,7 +33,7 @@ namespace HLStrafe
 		result in maximal speed gain. Postype != WATER.
 
 		Struct requirements:
-			Velocity (non-zero);
+			Velocity;
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
 	double GetMaxAccelAngle(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed);
