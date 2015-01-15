@@ -21,7 +21,7 @@ namespace HLStrafe
 		if (tmp <= 0.0)
 			return 90.0;
 
-		double speed = Length(player.Velocity);
+		double speed = Length<float, 2>(player.Velocity);
 		if (tmp < speed)
 			return std::acos(tmp / speed) * M_RAD2DEG;
 
