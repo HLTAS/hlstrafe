@@ -8,7 +8,7 @@ namespace HLStrafe
 {
 	double GetMaxAccelAngle(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed)
 	{
-		assert((!IsZero<float, 3>(player.Velocity))); // Additional brackets because Microsoft are good developers.
+		assert(!IsZero(player.Velocity));
 		assert(postype != PositionType::WATER);
 
 		bool onground = (postype == PositionType::GROUND);
@@ -18,7 +18,7 @@ namespace HLStrafe
 			return 180.0;
 
 		double wishspeed_capped = onground ? wishspeed : 30;
-		double anglecos = (wishspeed_capped - accelspeed) / Length<float, 3>(player.Velocity);
+		double anglecos = (wishspeed_capped - accelspeed) / Length(player.Velocity);
 		if (anglecos >= 1)
 			return 0.0;
 		else if (anglecos <= -1)

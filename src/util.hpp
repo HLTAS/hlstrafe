@@ -10,8 +10,8 @@ namespace HLStrafe
 	const double M_RAD2DEG = 180 / M_PI;
 	const double M_DEG2RAD = M_PI / 180;
 
-	template<typename T, std::size_t size>
-	inline bool IsZero(const T vec[size])
+	template<typename T, std::size_t size = 3>
+	inline bool IsZero(const T vec[])
 	{
 		for (std::size_t i = 0; i < size; ++i)
 			if (vec[i] != 0)
@@ -20,8 +20,8 @@ namespace HLStrafe
 		return true;
 	}
 
-	template<typename T, std::size_t size>
-	inline double Length(const T vec[size])
+	template<typename T, std::size_t size = 3>
+	inline double Length(const T vec[])
 	{
 		double squared = 0.0;
 		for (std::size_t i = 0; i < size; ++i)
