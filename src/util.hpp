@@ -4,7 +4,7 @@
 
 namespace HLStrafe
 {
-#ifdef WIN32
+#ifndef M_PI
 	const double M_PI = 3.14159265358979323846;
 #endif
 	const double M_RAD2DEG = 180 / M_PI;
