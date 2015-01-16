@@ -93,8 +93,8 @@ namespace HLStrafe
 		}
 	}
 
-	double SideStrafe(PlayerData& player, const MovementVars& vars,
-		PositionType postype, double wishspeed, HLTAS::Button buttons, double yaw, double theta, bool right)
+	static void SideStrafeGeneral(PlayerData& player, float trial_vel[2], const MovementVars& vars, PositionType postype, double wishspeed,
+		HLTAS::Button buttons, double &yaw, double &trial_yaw, double theta, bool right)
 	{
 		assert(postype != PositionType::WATER);
 
@@ -106,35 +106,19 @@ namespace HLStrafe
 			yaw = std::atan2(player.Velocity[1], player.Velocity[0]);
 		yaw += phi - theta;
 
-		double trial_yaws[2] = {
-			AngleModRad(yaw),
-			AngleModRad(yaw + std::copysign(yaw, M_U_RAD))
-		};
+		trial_yaw = AngleModRad(yaw + std::copysign(yaw, M_U_RAD));
+		yaw = AngleModRad(yaw);
 
-		double avec[2] = {
-			std::cos(trial_yaws[0] - phi),
-			std::sin(trial_yaws[0] - phi)
-		};
+		double avec[2] = { std::cos(trial_yaw - phi), std::sin(trial_yaw - phi) };
 		float orig_vel[2] = { player.Velocity[0], player.Velocity[1] };
 		VectorFME(player, vars, postype, wishspeed, avec);
-		float trial_vel1[2] = { player.Velocity[0], player.Velocity[1] };
+		trial_vel[0] = player.Velocity[0];
+		trial_vel[1] = player.Velocity[1];
 		player.Velocity[0] = orig_vel[0];
 		player.Velocity[1] = orig_vel[1];
 
-		avec[0] = std::cos(trial_yaws[1] - phi);
-		avec[1] = std::sin(trial_yaws[1] - phi);
+		avec[0] = std::cos(yaw - phi);
+		avec[1] = std::sin(yaw - phi);
 		VectorFME(player, vars, postype, wishspeed, avec);
-
-		double trial_speedsqrs[2] = {
-			DotProduct<float, float, 2>(trial_vel1, trial_vel1),
-			DotProduct<float, float, 2>(player.Velocity, player.Velocity)
-		};
-
-		if (trial_speedsqrs[0] > trial_speedsqrs[1]) {
-			player.Velocity[0] = trial_vel1[0];
-			player.Velocity[1] = trial_vel1[1];
-			return trial_yaws[1];
-		} else
-			return trial_yaws[0];
 	}
 }

@@ -58,18 +58,4 @@ namespace HLStrafe
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
 	void VectorFME(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const double a[2]);
-
-	/*
-		Finds the best yaw to use taking the anglemod compensation into account, then
-		strafes sideways with that yaw and returns it in radians, given fixed buttons.
-		The resulting velocity is stored in player.Velocity.
-		Uses the given yaw instead of the Velocity angle if Velocity is zero.
-		Postype != WATER.
-
-		Struct requirements:
-			Velocity;
-			Frametime, Accelerate or Airaccelerate, EntFriction.
-	*/
-	double SideStrafe(PlayerData& player, const MovementVars& vars,
-		PositionType postype, double wishspeed, HLTAS::Button buttons, double yaw, double theta, bool right);
 }
