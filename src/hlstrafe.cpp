@@ -122,13 +122,13 @@ namespace HLStrafe
 		yaws[0] = AngleModRad(yaw);
 		yaws[1] = AngleModRad(yaw + std::copysign(M_U_RAD, yaw));
 
-		double avec[2] = { std::cos(yaws[0] - phi), std::sin(yaws[1] - phi) };
+		double avec[2] = { std::cos(yaws[0] - phi), std::sin(yaws[0] - phi) };
 		PlayerData pl = player;
 		VectorFME(pl, vars, postype, wishspeed, avec);
 		VecCopy<float, 2>(pl.Velocity, velocities[0]);
 
-		avec[0] = std::cos(yaw - phi);
-		avec[1] = std::sin(yaw - phi);
+		avec[0] = std::cos(yaws[1] - phi);
+		avec[1] = std::sin(yaws[1] - phi);
 		VecCopy<float, 2>(player.Velocity, pl.Velocity);
 		VectorFME(pl, vars, postype, wishspeed, avec);
 		VecCopy<float, 2>(pl.Velocity, velocities[1]);
