@@ -40,7 +40,7 @@ namespace HLStrafe
 
 	/*
 		Compute new velocity given unit acceleration vector. player.Velocity
-		will be modified.
+		will be modified. Postype != WATER.
 
 		Struct requirements:
 			Velocity;
