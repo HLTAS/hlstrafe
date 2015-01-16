@@ -46,5 +46,5 @@ namespace HLStrafe
 			Velocity;
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
-	void VectorFME(PlayerData& player, const MovementVars& vars, const double a[2], PositionType postype, double wishspeed);
+	void VectorFME(PlayerData& player, const MovementVars& vars, PositionType postype, const double wishdir[2], double wishspeed);
 }
