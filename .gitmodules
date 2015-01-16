@@ -1,0 +1,3 @@
+[submodule "hltas"]
+	path = hltas
+	url = https://github.com/HLTAS/hltas.git
