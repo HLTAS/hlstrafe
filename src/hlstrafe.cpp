@@ -40,19 +40,17 @@ namespace HLStrafe
 		if (accelspeed <= 0.0) {
 			double wishspeed_capped = onground ? wishspeed : 30;
 			accelspeed *= -1;
-			if (accelspeed >= speed) {
+			if (accelspeed >= speed)
 				accelspeed = 0;
-			}
 			if (wishspeed_capped >= speed)
 				return std::acos(accelspeed / speed);
 			else
 				return std::acos(std::max(accelspeed, wishspeed_capped) / speed); // The actual angle needs to be _less_ than this if wishspeed_capped >= accelspeed.
 		} else {
-			if (accelspeed >= speed) {
+			if (accelspeed >= speed)
 				return M_PI;
-			} else {
+			else
 				return std::acos(-1 * accelspeed / speed);
-			}
 		}
 	}
 
@@ -78,13 +76,13 @@ namespace HLStrafe
 	inline double ButtonsPhi(HLTAS::Button button)
 	{
 		switch (button) {
-		case HLTAS::Button::FORWARD: return 0;
-		case HLTAS::Button::FORWARD_LEFT: return -M_PI / 4;
-		case HLTAS::Button::LEFT: return -M_PI / 2;
-		case HLTAS::Button::BACK_LEFT: return -3 * M_PI / 2;
-		case HLTAS::Button::BACK: return M_PI;
-		case HLTAS::Button::BACK_RIGHT: return 3 * M_PI / 2;
-		case HLTAS::Button::RIGHT: return M_PI / 2;
+		case HLTAS::Button::      FORWARD: return 0;
+		case HLTAS::Button:: FORWARD_LEFT: return -M_PI / 4;
+		case HLTAS::Button::         LEFT: return -M_PI / 2;
+		case HLTAS::Button::    BACK_LEFT: return -3 * M_PI / 2;
+		case HLTAS::Button::         BACK: return M_PI;
+		case HLTAS::Button::   BACK_RIGHT: return 3 * M_PI / 2;
+		case HLTAS::Button::        RIGHT: return M_PI / 2;
 		case HLTAS::Button::FORWARD_RIGHT: return M_PI / 4;
 		default: return 0;
 		}
