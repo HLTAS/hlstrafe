@@ -54,7 +54,7 @@ namespace HLStrafe
 		}
 	}
 
-	void VectorFME(PlayerData& player, const MovementVars& vars, PositionType postype, const double a[2], double wishspeed)
+	void VectorFME(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const double a[2])
 	{
 		assert(postype != PositionType::WATER);
 
@@ -88,36 +88,40 @@ namespace HLStrafe
 		}
 	}
 
-	double SideStrafe(HLTAS::Button buttons, PlayerData& player, const MovementVars& vars,
-		PositionType postype, double wishspeed, double yaw, double theta, bool right)
+	double SideStrafe(PlayerData& player, const MovementVars& vars,
+		PositionType postype, double wishspeed, HLTAS::Button buttons, double yaw, double theta, bool right)
 	{
 		assert(postype != PositionType::WATER);
 
 		double phi = ButtonsPhi(buttons);
 		phi = right ? phi : -phi;
+		theta = right ? theta : -theta;
 
 		if (!IsZero<float, 2>(player.Velocity))
 			yaw = std::atan2(player.Velocity[1], player.Velocity[0]);
-		yaw += phi - (right ? theta : -theta);
+		yaw += phi - theta;
 
 		double trial_yaws[2] = {
 			AngleModRad(yaw),
 			AngleModRad(yaw + (right ? M_U_RAD : -M_U_RAD))
 		};
+		// Very rare case.
+		if (yaw == trial_yaws[0])
+			trial_yaws[0] -= (right ? M_U_RAD : -M_U_RAD);
 
 		double avec[2] = {
 			std::cos(trial_yaws[0] - phi),
 			std::sin(trial_yaws[0] - phi)
 		};
-		float orig_vel[2] = {player.Velocity[0], player.Velocity[1]};
-		VectorFME(player, vars, postype, avec, wishspeed);
-		float trial_vel1[2] = {player.Velocity[0], player.Velocity[1]};
+		float orig_vel[2] = { player.Velocity[0], player.Velocity[1] };
+		VectorFME(player, vars, postype, wishspeed, avec);
+		float trial_vel1[2] = { player.Velocity[0], player.Velocity[1] };
 		player.Velocity[0] = orig_vel[0];
 		player.Velocity[1] = orig_vel[1];
 
 		avec[0] = std::cos(trial_yaws[1] - phi);
 		avec[1] = std::sin(trial_yaws[1] - phi);
-		VectorFME(player, vars, postype, avec, wishspeed);
+		VectorFME(player, vars, postype, wishspeed, avec);
 
 		double trial_speedsqrs[2] = {
 			DotProduct<float, float, 2>(trial_vel1, trial_vel1),

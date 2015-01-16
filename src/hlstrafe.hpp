@@ -50,23 +50,26 @@ namespace HLStrafe
 	double MaxAngleTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed);
 
 	/*
-		Compute new velocity given unit acceleration vector and wishspeed.
-		Player.Velocity will be modified. Postype != WATER.
+		Computes the new velocity given unit acceleration vector and wishspeed
+		and stores the result in player.Velocity. Postype != WATER.
 
 		Struct requirements:
 			Velocity;
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
-	void VectorFME(PlayerData& player, const MovementVars& vars, PositionType postype, const double a[2], double wishspeed);
+	void VectorFME(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const double a[2]);
 
 	/*
-		Strafe sideways and returns yaw in radians, given fixed buttons.
-		Velocity will be modified. Postype != WATER.
+		Finds the best yaw to use taking the anglemod compensation into account, then
+		strafes sideways with that yaw and returns it in radians, given fixed buttons.
+		The resulting velocity is stored in player.Velocity.
+		Uses the given yaw instead of the Velocity angle if Velocity is zero.
+		Postype != WATER.
 
 		Struct requirements:
 			Velocity;
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
-	double SideStrafe(HLTAS::Button buttons, PlayerData& player, const MovementVars& vars,
-		PositionType postype, double wishspeed, double yaw, double theta, bool right);
+	double SideStrafe(PlayerData& player, const MovementVars& vars,
+		PositionType postype, double wishspeed, HLTAS::Button buttons, double yaw, double theta, bool right);
 }
