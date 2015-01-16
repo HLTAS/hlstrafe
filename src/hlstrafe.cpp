@@ -94,7 +94,7 @@ namespace HLStrafe
 	}
 
 	static void SideStrafeGeneral(PlayerData& player, float trial_vel[2], const MovementVars& vars, PositionType postype, double wishspeed,
-		HLTAS::Button buttons, double &yaw, double &trial_yaw, double theta, bool right)
+		HLTAS::Button buttons, double& yaw, double& trial_yaw, double theta, bool right)
 	{
 		assert(postype != PositionType::WATER);
 
@@ -126,6 +126,7 @@ namespace HLStrafe
 		double& yaw, bool right)
 	{
 		assert(postype != PositionType::WATER);
+
 		float trial_vel[2];
 		double trial_yaw = yaw;
 		double theta = MaxAccelTheta(player, vars, postype, wishspeed);
