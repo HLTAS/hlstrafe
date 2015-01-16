@@ -40,6 +40,17 @@ namespace HLStrafe
 	double MaxAccelTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed);
 
 	/*
+		Returns the angle in radians - [-Pi; Pi) - between velocity and wishdir that will
+		result in maximal speed gain into the given yaw - [-Pi; Pi). If velocity is zero, vel_yaw will
+		be used in place of velocity angle. Postype != WATER.
+
+		Struct requirements:
+			Velocity;
+			Frametime, Accelerate or Airaccelerate, EntFriction.
+	*/
+	double MaxAccelIntoYawTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, double vel_yaw, double yaw);
+
+	/*
 		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
 		result in maximal velocity angle change. Postype != WATER.
 

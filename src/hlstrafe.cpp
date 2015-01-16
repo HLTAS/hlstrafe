@@ -29,6 +29,19 @@ namespace HLStrafe
 		return 0.0;
 	}
 
+	double MaxAccelIntoYawTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, double vel_yaw, double yaw)
+	{
+		assert(postype != PositionType::WATER);
+
+		if (!IsZero<float, 2>(player.Velocity))
+			vel_yaw = std::atan2(player.Velocity[1], player.Velocity[0]);
+
+		double theta = MaxAccelTheta(player, vars, postype, wishspeed);
+		if (theta == 0.0 || theta == M_PI)
+			return NormalizeRad(yaw - vel_yaw + theta);
+		return std::copysign(theta, NormalizeRad(yaw - vel_yaw));
+	}
+
 	double MaxAngleTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed)
 	{
 		assert(postype != PositionType::WATER);
@@ -106,7 +119,7 @@ namespace HLStrafe
 			yaw = std::atan2(player.Velocity[1], player.Velocity[0]);
 		yaw += phi - theta;
 
-		trial_yaw = AngleModRad(yaw + std::copysign(yaw, M_U_RAD));
+		trial_yaw = AngleModRad(yaw + std::copysign(M_U_RAD, yaw));
 		yaw = AngleModRad(yaw);
 
 		double avec[2] = { std::cos(trial_yaw - phi), std::sin(trial_yaw - phi) };

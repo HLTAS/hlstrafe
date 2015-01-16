@@ -44,4 +44,14 @@ namespace HLStrafe
 	{
 		return M_U_RAD * ((int)(a * M_INVU_RAD) & 0xffff);
 	}
+
+	// Return angle in [-Pi; Pi).
+	inline double NormalizeRad(double a)
+	{
+		while (a >= M_PI)
+			a -= M_PI;
+		while (a < -M_PI)
+			a += M_PI;
+		return a;
+	}
 }
