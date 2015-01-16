@@ -107,18 +107,17 @@ namespace HLStrafe
 	}
 
 	static void SideStrafeGeneral(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed,
-		HLTAS::Button buttons, double vel_yaw, double theta, bool right, bool safeguard_yaw, float velocities[2][2], double yaws[2])
+		HLTAS::Button buttons, double vel_yaw, double theta, bool clockwise, bool safeguard_yaw, float velocities[2][2], double yaws[2])
 	{
 		assert(postype != PositionType::WATER);
 
 		double phi = ButtonsPhi(buttons);
-		phi = right ? -phi : phi;
-		theta = right ? -theta : theta;
+		theta = clockwise ? -theta : theta;
 
 		if (!IsZero<float, 2>(player.Velocity))
 			vel_yaw = std::atan2(player.Velocity[1], player.Velocity[0]);
 
-		double yaw = vel_yaw + phi + theta;
+		double yaw = vel_yaw - phi + theta;
 		yaws[0] = AngleModRad(yaw);
 		// Very rare case of yaw == anglemod(yaw).
 		if (yaws[0] == yaw) {
@@ -132,13 +131,13 @@ namespace HLStrafe
 		} else
 			yaws[1] = AngleModRad(yaw + std::copysign(M_U_RAD, yaw));
 
-		double avec[2] = { std::cos(yaws[0] - phi), std::sin(yaws[0] - phi) };
+		double avec[2] = { std::cos(yaws[0] + phi), std::sin(yaws[0] + phi) };
 		PlayerData pl = player;
 		VectorFME(pl, vars, postype, wishspeed, avec);
 		VecCopy<float, 2>(pl.Velocity, velocities[0]);
 
-		avec[0] = std::cos(yaws[1] - phi);
-		avec[1] = std::sin(yaws[1] - phi);
+		avec[0] = std::cos(yaws[1] + phi);
+		avec[1] = std::sin(yaws[1] + phi);
 		VecCopy<float, 2>(player.Velocity, pl.Velocity);
 		VectorFME(pl, vars, postype, wishspeed, avec);
 		VecCopy<float, 2>(pl.Velocity, velocities[1]);
