@@ -1,4 +1,5 @@
 #pragma once
+#include "hltas.hpp"
 
 namespace HLStrafe
 {
@@ -47,4 +48,15 @@ namespace HLStrafe
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
 	void VectorFME(PlayerData& player, const MovementVars& vars, PositionType postype, const double a[2], double wishspeed);
+
+	/*
+		Strafe sideways and returns yaw in radians, given fixed buttons.
+		Velocity will be modified. Postype != WATER.
+
+		Struct requirements:
+			Velocity;
+			Frametime, Accelerate or Airaccelerate, EntFriction.
+	*/
+	double SideStrafe(HLTAS::Button buttons, PlayerData& player, const MovementVars& vars,
+		PositionType postype, double wishspeed, double yaw, double theta, bool right);
 }
