@@ -121,4 +121,25 @@ namespace HLStrafe
 		avec[1] = std::sin(yaw - phi);
 		VectorFME(player, vars, postype, wishspeed, avec);
 	}
+
+	void SideStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+		double& yaw, bool right)
+	{
+		assert(postype != PositionType::WATER);
+		float trial_vel[2];
+		double trial_yaw = yaw;
+		double theta = MaxAccelTheta(player, vars, postype, wishspeed);
+		SideStrafeGeneral(player, trial_vel, vars, postype, wishspeed, buttons, yaw, trial_yaw, theta, right);
+
+		double trial_speedsqrs[2] = {
+			DotProduct<float, float, 2>(player.Velocity, player.Velocity),
+			DotProduct<float, float, 2>(trial_vel, trial_vel)
+		};
+
+		if (trial_speedsqrs[1] > trial_speedsqrs[0]) {
+			player.Velocity[0] = trial_vel[0];
+			player.Velocity[1] = trial_vel[1];
+			yaw = trial_yaw;
+		}
+	}
 }
