@@ -187,7 +187,7 @@ namespace HLStrafe
 		};
 
 		if (speedsqrs[0] > speedsqrs[1]) {
-			VecCopy(temp_vel, player.Velocity);
+			VecCopy<float, 2>(temp_vel, player.Velocity);
 			return yaws[0];
 		} else
 			return yaws[1];
