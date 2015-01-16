@@ -123,12 +123,18 @@ namespace HLStrafe
 		// Very rare case of yaw == anglemod(yaw).
 		if (yaws[0] == yaw) {
 			// Multiply by 1.5 because the fp precision might make the yaw a value not enough to reach the next anglemod.
-			yaws[1] = AngleModRad(yaw + (std::copysign(M_U_RAD, yaw) * 1.5));
+			// Or divide by 2 because it might throw us a value too far back.
+			if (yaw >= 0)
+				yaws[1] = AngleModRad(yaw + (M_U_RAD * 1.5));
+			else
+				yaws[1] = AngleModRad(yaw - (M_U_RAD / 2));
 
 			// We need to handle this when we may have yaw equal to the speed change boundary.
 			if (safeguard_yaw) {
-				// Divide by 2 because it might throw us a value too far back.
-				yaws[0] = AngleModRad(yaw - (std::copysign(M_U_RAD, yaw) / 2));
+				if (yaw >= 0)
+					yaws[0] = AngleModRad(yaw - (M_U_RAD / 2));
+				else
+					yaws[0] = AngleModRad(yaw + (M_U_RAD * 1.5));
 			}
 		} else
 			yaws[1] = AngleModRad(yaw + std::copysign(M_U_RAD, yaw));
