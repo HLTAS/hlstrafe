@@ -31,6 +31,15 @@ namespace HLStrafe
 		return std::sqrt(squared);
 	}
 
+	template<typename T1, typename T2, std::size_t size = 3>
+	inline double DotProduct(const T1 a[], const T2 b[])
+	{
+		double result = 0.0;
+		for (size_t i = 0; i < size; ++i)
+			result += a[i] * b[i];
+		return result;
+	}
+
 	inline double AngleModRad(double a)
 	{
 		return M_U_RAD * ((int)(a * M_INVU_RAD) & 0xffff);
