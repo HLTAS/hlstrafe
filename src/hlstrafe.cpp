@@ -173,7 +173,8 @@ namespace HLStrafe
 	{
 		assert(postype != PositionType::WATER);
 
-		float temp_vel[2], orig_vel[2], yaws[2];
+		float temp_vel[2], orig_vel[2];
+		double yaws[2];
 		VecCopy<float, 2>(player.Velocity, orig_vel);
 		yaws[0] = SideStrafeMaxAccel(player, vars, postype, wishspeed, buttons, vel_yaw, false);
 		VecCopy<float, 2>(player.Velocity, temp_vel);
