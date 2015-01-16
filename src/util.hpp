@@ -35,7 +35,7 @@ namespace HLStrafe
 	inline double DotProduct(const T1 a[], const T2 b[])
 	{
 		double result = 0.0;
-		for (size_t i = 0; i < size; ++i)
+		for (std::size_t i = 0; i < size; ++i)
 			result += a[i] * b[i];
 		return result;
 	}

@@ -39,12 +39,12 @@ namespace HLStrafe
 	double MaxAccelTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed);
 
 	/*
-		Compute new velocity given unit acceleration vector. player.Velocity
-		will be modified. Postype != WATER.
+		Compute new velocity given unit acceleration vector and wishspeed.
+		Player.Velocity will be modified. Postype != WATER.
 
 		Struct requirements:
 			Velocity;
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
-	void VectorFME(PlayerData& player, const MovementVars& vars, PositionType postype, const double wishdir[2], double wishspeed);
+	void VectorFME(PlayerData& player, const MovementVars& vars, PositionType postype, const double a[2], double wishspeed);
 }

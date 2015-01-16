@@ -28,13 +28,13 @@ namespace HLStrafe
 		return 0.0;
 	}
 
-	void VectorFME(PlayerData& player, const MovementVars& vars, PositionType postype, const double wishdir[2], double wishspeed)
+	void VectorFME(PlayerData& player, const MovementVars& vars, PositionType postype, const double a[2], double wishspeed)
 	{
 		assert(postype != PositionType::WATER);
 
 		bool onground = (postype == PositionType::GROUND);
 		double wishspeed_capped = onground ? wishspeed : 30;
-		double tmp = wishspeed_capped - DotProduct<float, double, 2>(player.Velocity, wishdir);
+		double tmp = wishspeed_capped - DotProduct<float, double, 2>(player.Velocity, a);
 		if (tmp <= 0.0)
 			return;
 
@@ -43,7 +43,7 @@ namespace HLStrafe
 		if (accelspeed <= tmp)
 			tmp = accelspeed;
 
-		player.Velocity[0] += wishdir[0] * tmp;
-		player.Velocity[1] += wishdir[1] * tmp;
+		player.Velocity[0] += a[0] * tmp;
+		player.Velocity[1] += a[1] * tmp;
 	}
 }
