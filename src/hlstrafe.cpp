@@ -74,4 +74,63 @@ namespace HLStrafe
 		player.Velocity[0] += a[0] * tmp;
 		player.Velocity[1] += a[1] * tmp;
 	}
+
+	inline double ButtonsPhi(HLTAS::Button button)
+	{
+		switch (button) {
+		case HLTAS::Button::FORWARD: return 0;
+		case HLTAS::Button::FORWARD_LEFT: return -M_PI / 4;
+		case HLTAS::Button::LEFT: return -M_PI / 2;
+		case HLTAS::Button::BACK_LEFT: return -3 * M_PI / 2;
+		case HLTAS::Button::BACK: return M_PI;
+		case HLTAS::Button::BACK_RIGHT: return 3 * M_PI / 2;
+		case HLTAS::Button::RIGHT: return M_PI / 2;
+		case HLTAS::Button::FORWARD_RIGHT: return M_PI / 4;
+		default: return 0;
+		}
+	}
+
+	double SideStrafe(HLTAS::Button buttons, PlayerData& player, const MovementVars& vars,
+		PositionType postype, double wishspeed, double yaw, double theta, bool right)
+	{
+		assert(postype != PositionType::WATER);
+
+		double phi = ButtonsPhi(buttons);
+		phi = right ? phi : -phi;
+
+		if (!IsZero<float, 2>(player.Velocity))
+			yaw = std::atan2(player.Velocity[1], player.Velocity[0]);
+		yaw += phi - (right ? theta : -theta);
+
+		double trial_yaws[2] = {
+			AngleModRad(yaw),
+			AngleModRad(yaw + (right ? M_U_RAD : -M_U_RAD))
+		};
+
+		double avec[2] = {
+			std::cos(trial_yaws[0] - phi),
+			std::sin(trial_yaws[0] - phi)
+		};
+		float orig_vel[2] = {player.Velocity[0], player.Velocity[1]};
+		VectorFME(player, vars, postype, avec, wishspeed);
+		float trial_vel1[2] = {player.Velocity[0], player.Velocity[1]};
+		player.Velocity[0] = orig_vel[0];
+		player.Velocity[1] = orig_vel[1];
+
+		avec[0] = std::cos(trial_yaws[1] - phi);
+		avec[1] = std::sin(trial_yaws[1] - phi);
+		VectorFME(player, vars, postype, avec, wishspeed);
+
+		double trial_speedsqrs[2] = {
+			DotProduct<float, float, 2>(trial_vel1, trial_vel1),
+			DotProduct<float, float, 2>(player.Velocity, player.Velocity)
+		};
+
+		if (trial_speedsqrs[0] > trial_speedsqrs[1]) {
+			player.Velocity[0] = trial_vel1[0];
+			player.Velocity[1] = trial_vel1[1];
+			return trial_yaws[1];
+		} else
+			return trial_yaws[0];
+	}
 }
