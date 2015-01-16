@@ -40,12 +40,17 @@ namespace HLStrafe
 		if (accelspeed <= 0.0) {
 			double wishspeed_capped = onground ? wishspeed : 30;
 			accelspeed *= -1;
-			if (accelspeed >= speed)
-				accelspeed = 0;
-			if (wishspeed_capped >= speed)
-				return std::acos(accelspeed / speed);
-			else
-				return std::acos(std::max(accelspeed, wishspeed_capped) / speed); // The actual angle needs to be _less_ than this if wishspeed_capped >= accelspeed.
+			if (accelspeed >= speed) {
+				if (wishspeed_capped >= speed)
+					return 0.0;
+				else
+					return std::acos(wishspeed_capped / speed); // The actual angle needs to be _less_ than this.
+			} else {
+				if (wishspeed_capped >= speed)
+					return std::acos(accelspeed / speed);
+				else
+					return std::acos(std::min(accelspeed, wishspeed_capped) / speed); // The actual angle needs to be _less_ than this if wishspeed_capped <= accelspeed.
+			}
 		} else {
 			if (accelspeed >= speed)
 				return M_PI;
