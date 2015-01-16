@@ -106,8 +106,8 @@ namespace HLStrafe
 		}
 	}
 
-	static void SideStrafeGeneral(PlayerData& player, float trial_vel[2], const MovementVars& vars, PositionType postype, double wishspeed,
-		HLTAS::Button buttons, double& yaw, double& trial_yaw, double theta, bool right)
+	static void SideStrafeGeneral(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed,
+		HLTAS::Button buttons, double vel_yaw, double theta, bool right, float velocities[2][2], double yaws[2])
 	{
 		assert(postype != PositionType::WATER);
 
@@ -116,44 +116,45 @@ namespace HLStrafe
 		theta = right ? theta : -theta;
 
 		if (!IsZero<float, 2>(player.Velocity))
-			yaw = std::atan2(player.Velocity[1], player.Velocity[0]);
-		yaw += phi - theta;
+			vel_yaw = std::atan2(player.Velocity[1], player.Velocity[0]);
 
-		trial_yaw = AngleModRad(yaw + std::copysign(M_U_RAD, yaw));
-		yaw = AngleModRad(yaw);
+		double yaw = vel_yaw + phi - theta;
+		yaws[0] = AngleModRad(yaw);
+		yaws[1] = AngleModRad(yaw + std::copysign(M_U_RAD, yaw));
 
-		double avec[2] = { std::cos(trial_yaw - phi), std::sin(trial_yaw - phi) };
-		float orig_vel[2] = { player.Velocity[0], player.Velocity[1] };
-		VectorFME(player, vars, postype, wishspeed, avec);
-		trial_vel[0] = player.Velocity[0];
-		trial_vel[1] = player.Velocity[1];
-		player.Velocity[0] = orig_vel[0];
-		player.Velocity[1] = orig_vel[1];
+		double avec[2] = { std::cos(yaws[0] - phi), std::sin(yaws[1] - phi) };
+		PlayerData pl = player;
+		VectorFME(pl, vars, postype, wishspeed, avec);
+		VecCopy<float, 2>(pl.Velocity, velocities[0]);
 
 		avec[0] = std::cos(yaw - phi);
 		avec[1] = std::sin(yaw - phi);
-		VectorFME(player, vars, postype, wishspeed, avec);
+		VecCopy<float, 2>(player.Velocity, pl.Velocity);
+		VectorFME(pl, vars, postype, wishspeed, avec);
+		VecCopy<float, 2>(pl.Velocity, velocities[1]);
 	}
 
-	void SideStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
-		double& yaw, bool right)
+	double SideStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+		double vel_yaw, bool right)
 	{
 		assert(postype != PositionType::WATER);
 
-		float trial_vel[2];
-		double trial_yaw = yaw;
 		double theta = MaxAccelTheta(player, vars, postype, wishspeed);
-		SideStrafeGeneral(player, trial_vel, vars, postype, wishspeed, buttons, yaw, trial_yaw, theta, right);
+		float velocities[2][2];
+		double yaws[2];
+		SideStrafeGeneral(player, vars, postype, wishspeed, buttons, vel_yaw, theta, right, velocities, yaws);
 
-		double trial_speedsqrs[2] = {
-			DotProduct<float, float, 2>(player.Velocity, player.Velocity),
-			DotProduct<float, float, 2>(trial_vel, trial_vel)
+		double speedsqrs[2] = {
+			DotProduct<float, float, 2>(velocities[0], velocities[0]),
+			DotProduct<float, float, 2>(velocities[1], velocities[1])
 		};
 
-		if (trial_speedsqrs[1] > trial_speedsqrs[0]) {
-			player.Velocity[0] = trial_vel[0];
-			player.Velocity[1] = trial_vel[1];
-			yaw = trial_yaw;
+		if (speedsqrs[0] > speedsqrs[1]) {
+			VecCopy(velocities[0], player.Velocity);
+			return yaws[0];
+		} else {
+			VecCopy(velocities[1], player.Velocity);
+			return yaws[1];
 		}
 	}
 }

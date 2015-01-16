@@ -13,6 +13,13 @@ namespace HLStrafe
 	const double M_INVU_RAD = 32768 / M_PI;
 
 	template<typename T, std::size_t size = 3>
+	inline void VecCopy(const T from[], T to[])
+	{
+		for (std::size_t i = 0; i < size; ++i)
+			to[i] = from[i];
+	}
+
+	template<typename T, std::size_t size = 3>
 	inline bool IsZero(const T vec[])
 	{
 		for (std::size_t i = 0; i < size; ++i)

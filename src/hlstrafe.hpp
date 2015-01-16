@@ -81,6 +81,6 @@ namespace HLStrafe
 			Velocity;
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
-	void SideStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
-		double& yaw, bool right);
+	double SideStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+		double vel_yaw, bool right);
 }
