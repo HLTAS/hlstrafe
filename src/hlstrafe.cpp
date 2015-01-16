@@ -167,4 +167,28 @@ namespace HLStrafe
 			return yaws[1];
 		}
 	}
+
+	double BestStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+		double vel_yaw)
+	{
+		assert(postype != PositionType::WATER);
+
+		float temp_vel[2], orig_vel[2], yaws[2];
+		VecCopy<float, 2>(player.Velocity, orig_vel);
+		yaws[0] = SideStrafeMaxAccel(player, vars, postype, wishspeed, buttons, vel_yaw, false);
+		VecCopy<float, 2>(player.Velocity, temp_vel);
+		VecCopy<float, 2>(orig_vel, player.Velocity);
+		yaws[1] = SideStrafeMaxAccel(player, vars, postype, wishspeed, buttons, vel_yaw, true);
+
+		double speedsqrs[2] = {
+			DotProduct<float, float, 2>(temp_vel, temp_vel),
+			DotProduct<float, float, 2>(player.Velocity, player.Velocity)
+		};
+
+		if (speedsqrs[0] > speedsqrs[1]) {
+			VecCopy(temp_vel, player.Velocity);
+			return yaws[0];
+		} else
+			return yaws[1];
+	}
 }
