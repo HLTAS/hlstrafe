@@ -37,4 +37,14 @@ namespace HLStrafe
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
 	double MaxAccelTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed);
+
+	/*
+		Compute new velocity given unit acceleration vector. player.Velocity
+		will be modified.
+
+		Struct requirements:
+			Velocity;
+			Frametime, Accelerate or Airaccelerate, EntFriction.
+	*/
+	void VectorFME(PlayerData& player, const MovementVars& vars, const double a[2], PositionType postype, double wishspeed);
 }
