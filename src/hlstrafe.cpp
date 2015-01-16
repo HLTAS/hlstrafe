@@ -107,7 +107,7 @@ namespace HLStrafe
 	}
 
 	static void SideStrafeGeneral(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed,
-		HLTAS::Button buttons, double vel_yaw, double theta, bool right, float velocities[2][2], double yaws[2])
+		HLTAS::Button buttons, double vel_yaw, double theta, bool right, bool safeguard_yaw, float velocities[2][2], double yaws[2])
 	{
 		assert(postype != PositionType::WATER);
 
@@ -120,7 +120,18 @@ namespace HLStrafe
 
 		double yaw = vel_yaw + phi - theta;
 		yaws[0] = AngleModRad(yaw);
-		yaws[1] = AngleModRad(yaw + std::copysign(M_U_RAD, yaw));
+		// Very rare case of yaw == anglemod(yaw).
+		if (yaws[0] == yaw) {
+			// Multiply by 1.5 because the fp precision might make the yaw a value not enough to reach the next anglemod.
+			yaws[1] = AngleModRad(yaw + (std::copysign(M_U_RAD, yaw) * 1.5));
+
+			// We need to handle this when we may have yaw equal to the speed change boundary.
+			if (safeguard_yaw) {
+				// Divide by 2 because it might throw us a value too far back.
+				yaws[0] = AngleModRad(yaw - (std::copysign(M_U_RAD, yaw) / 2));
+			}
+		} else
+			yaws[1] = AngleModRad(yaw + std::copysign(M_U_RAD, yaw));
 
 		double avec[2] = { std::cos(yaws[0] - phi), std::sin(yaws[0] - phi) };
 		PlayerData pl = player;
@@ -142,7 +153,7 @@ namespace HLStrafe
 		double theta = MaxAccelTheta(player, vars, postype, wishspeed);
 		float velocities[2][2];
 		double yaws[2];
-		SideStrafeGeneral(player, vars, postype, wishspeed, buttons, vel_yaw, theta, right, velocities, yaws);
+		SideStrafeGeneral(player, vars, postype, wishspeed, buttons, vel_yaw, theta, right, false, velocities, yaws);
 
 		double speedsqrs[2] = {
 			DotProduct<float, float, 2>(velocities[0], velocities[0]),
