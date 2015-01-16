@@ -29,7 +29,7 @@ namespace HLStrafe
 	};
 
 	/*
-		Returns the angle in radians between velocity and wishdir that will
+		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
 		result in maximal speed gain. Postype != WATER.
 
 		Struct requirements:
@@ -37,6 +37,16 @@ namespace HLStrafe
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
 	double MaxAccelTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed);
+
+	/*
+		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
+		result in maximal velocity angle change. Postype != WATER.
+
+		Struct requirements:
+			Velocity;
+			Frametime, Accelerate or Airaccelerate, EntFriction.
+	*/
+	double MaxAngleTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed);
 
 	/*
 		Compute new velocity given unit acceleration vector and wishspeed.
