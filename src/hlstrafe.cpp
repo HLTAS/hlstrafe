@@ -95,13 +95,13 @@ namespace HLStrafe
 	{
 		switch (button) {
 		case HLTAS::Button::      FORWARD: return 0;
-		case HLTAS::Button:: FORWARD_LEFT: return -M_PI / 4;
-		case HLTAS::Button::         LEFT: return -M_PI / 2;
-		case HLTAS::Button::    BACK_LEFT: return -3 * M_PI / 2;
-		case HLTAS::Button::         BACK: return M_PI;
-		case HLTAS::Button::   BACK_RIGHT: return 3 * M_PI / 2;
-		case HLTAS::Button::        RIGHT: return M_PI / 2;
-		case HLTAS::Button::FORWARD_RIGHT: return M_PI / 4;
+		case HLTAS::Button:: FORWARD_LEFT: return M_PI / 4;
+		case HLTAS::Button::         LEFT: return M_PI / 2;
+		case HLTAS::Button::    BACK_LEFT: return 3 * M_PI / 2;
+		case HLTAS::Button::         BACK: return -M_PI;
+		case HLTAS::Button::   BACK_RIGHT: return -3 * M_PI / 2;
+		case HLTAS::Button::        RIGHT: return -M_PI / 2;
+		case HLTAS::Button::FORWARD_RIGHT: return -M_PI / 4;
 		default: return 0;
 		}
 	}
@@ -112,13 +112,13 @@ namespace HLStrafe
 		assert(postype != PositionType::WATER);
 
 		double phi = ButtonsPhi(buttons);
-		phi = right ? phi : -phi;
-		theta = right ? theta : -theta;
+		phi = right ? -phi : phi;
+		theta = right ? -theta : theta;
 
 		if (!IsZero<float, 2>(player.Velocity))
 			vel_yaw = std::atan2(player.Velocity[1], player.Velocity[0]);
 
-		double yaw = vel_yaw + phi - theta;
+		double yaw = vel_yaw + phi + theta;
 		yaws[0] = AngleModRad(yaw);
 		// Very rare case of yaw == anglemod(yaw).
 		if (yaws[0] == yaw) {
