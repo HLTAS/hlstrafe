@@ -103,11 +103,8 @@ namespace HLStrafe
 
 		double trial_yaws[2] = {
 			AngleModRad(yaw),
-			AngleModRad(yaw + (right ? M_U_RAD : -M_U_RAD))
+			AngleModRad(yaw + std::copysign(yaw, M_U_RAD));
 		};
-		// Very rare case.
-		if (yaw == trial_yaws[0])
-			trial_yaws[0] -= (right ? M_U_RAD : -M_U_RAD);
 
 		double avec[2] = {
 			std::cos(trial_yaws[0] - phi),
