@@ -327,4 +327,33 @@ namespace HLStrafe
 		// TODO add the rest of the calls when the functions are done.
 		}
 	}
+
+	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame)
+	{
+		ProcessedFrame out = {};
+
+		out.Pitch = player.Viewangles[0];
+		out.Yaw = player.Viewangles[1];
+
+		out.Forward = frame.Forward;
+		out.Left = frame.Left;
+		out.Right = frame.Right;
+		out.Back = frame.Back;
+		out.Up = frame.Up;
+		out.Down = frame.Down;
+
+		out.Jump = frame.Jump;
+		out.Duck = frame.Duck;
+		out.Use = frame.Use;
+		out.Attack1 = frame.Attack1;
+		out.Attack2 = frame.Attack2;
+		out.Reload = frame.Reload;
+
+		out.Forwardspeed = 10000.0f;
+		out.Sidespeed = 10000.0f;
+		out.Backspeed = 10000.0f;
+		out.Upspeed = 10000.0f;
+
+		return out;
+	}
 }

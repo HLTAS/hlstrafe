@@ -6,6 +6,7 @@ namespace HLStrafe
 	struct PlayerData {
 		float Origin[3];
 		float Velocity[3];
+		float Viewangles[3];
 	};
 
 	struct MovementVars {
@@ -28,6 +29,36 @@ namespace HLStrafe
 		AIR,
 		WATER
 	};
+
+	struct ProcessedFrame {
+		float Pitch;
+		float Yaw;
+
+		bool Forward;
+		bool Left;
+		bool Right;
+		bool Back;
+		bool Up;
+		bool Down;
+
+		bool Jump;
+		bool Duck;
+		bool Use;
+		bool Attack1;
+		bool Attack2;
+		bool Reload;
+
+		float Forwardspeed;
+		float Sidespeed;
+		float Backspeed;
+		float Upspeed;
+	};
+
+	/*
+		All-in-one function that does everything and returns the buttons,
+		viewangles and FSU.
+	*/
+	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame);
 
 	/*
 		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
