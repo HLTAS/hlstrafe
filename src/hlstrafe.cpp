@@ -34,7 +34,7 @@ namespace HLStrafe
 		assert(postype != PositionType::WATER);
 
 		if (!IsZero<float, 2>(player.Velocity))
-			vel_yaw = std::atan2(player.Velocity[1], player.Velocity[0]);
+			vel_yaw = Atan2(player.Velocity[1], player.Velocity[0]);
 
 		double theta = MaxAccelTheta(player, vars, postype, wishspeed);
 		if (theta == 0.0 || theta == M_PI)
@@ -120,7 +120,7 @@ namespace HLStrafe
 		theta = right ? -theta : theta;
 
 		if (!IsZero<float, 2>(player.Velocity))
-			vel_yaw = std::atan2(player.Velocity[1], player.Velocity[0]);
+			vel_yaw = Atan2(player.Velocity[1], player.Velocity[0]);
 
 		double yaw = vel_yaw - phi + theta;
 		yaws[0] = AngleModRad(yaw);
@@ -285,7 +285,7 @@ namespace HLStrafe
 		float velocities[2][2];
 		double yaws[2];
 		if (!IsZero<float, 2>(player.Velocity))
-			vel_yaw = std::atan2(player.Velocity[1], player.Velocity[0]);
+			vel_yaw = Atan2(player.Velocity[1], player.Velocity[0]);
 		SideStrafeGeneral(player, vars, postype, wishspeed, buttons, vel_yaw, theta, (NormalizeRad(yaw - vel_yaw) < 0), safeguard_yaw, velocities, yaws);
 
 		double old_speed = Length<float, 2>(player.Velocity);
@@ -310,19 +310,15 @@ namespace HLStrafe
 		assert(postype != PositionType::WATER);
 
 		// Covers the case where both vectors are zero.
-		if (Distance<float, float, 2>(player.Origin, point) <= 10.0) {
+		if (Distance<float, float, 2>(player.Origin, point) <= 2.0) {
 			strafed = false;
 			return 0.0;
 		}
 		strafed = true;
 
-		double yaw;
-		if (IsZero<float, 2>(player.Origin))
-			yaw = std::atan2(point[1], point[0]);
-		else if (IsZero<float, 2>(point))
-			yaw = std::atan2(player.Origin[1], player.Origin[0]);
-		else
-			yaw = AngleRad<float, float, 2>(player.Origin, point);
+		float difference[2];
+		VecSubtract<float, float, 2>(point, player.Origin, difference);
+		double yaw = Atan2(difference[1], difference[0]);
 
 		switch (type) {
 		case HLTAS::StrafeType::MAXACCEL: return YawStrafeMaxAccel(player, vars, postype, wishspeed, buttons, vel_yaw, yaw);

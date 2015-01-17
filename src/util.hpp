@@ -91,4 +91,10 @@ namespace HLStrafe
 	{
 		return std::fmod(a, M_PI);
 	}
+
+	// Convert both arguments to doubles.
+	inline double Atan2(double a, double b)
+	{
+		return std::atan2(a, b);
+	}
 }
