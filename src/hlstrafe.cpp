@@ -250,4 +250,57 @@ namespace HLStrafe
 		} else
 			return yaws[1];
 	}
+
+	double YawStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+		double vel_yaw, double yaw)
+	{
+		assert(postype != PositionType::WATER);
+
+		double theta = MaxAccelIntoYawTheta(player, vars, postype, wishspeed, vel_yaw, yaw);
+		float velocities[2][2];
+		double yaws[2];
+		SideStrafeGeneral(player, vars, postype, wishspeed, buttons, vel_yaw, std::fabs(theta), (theta < 0), false, velocities, yaws);
+
+		double speedsqrs[2] = {
+			DotProduct<float, float, 2>(velocities[0], velocities[0]),
+			DotProduct<float, float, 2>(velocities[1], velocities[1])
+		};
+
+		if (speedsqrs[0] > speedsqrs[1]) {
+			VecCopy<float, 2>(velocities[0], player.Velocity);
+			return yaws[0];
+		} else {
+			VecCopy<float, 2>(velocities[1], player.Velocity);
+			return yaws[1];
+		}
+	}
+
+	double YawStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+		double vel_yaw, double yaw)
+	{
+		assert(postype != PositionType::WATER);
+
+		bool safeguard_yaw;
+		double theta = MaxAngleTheta(player, vars, postype, wishspeed, safeguard_yaw);
+		float velocities[2][2];
+		double yaws[2];
+		if (!IsZero<float, 2>(player.Velocity))
+			vel_yaw = std::atan2(player.Velocity[1], player.Velocity[0]);
+		SideStrafeGeneral(player, vars, postype, wishspeed, buttons, vel_yaw, theta, (NormalizeRad(yaw - vel_yaw) < 0), safeguard_yaw, velocities, yaws);
+
+		double old_speed = Length<float, 2>(player.Velocity);
+		double speeds[2] = { Length<float, 2>(velocities[0]), Length<float, 2>(velocities[1]) };
+		double cosangles[2] = {
+			DotProduct<float, float, 2>(velocities[0], player.Velocity) / (old_speed * speeds[0]),
+			DotProduct<float, float, 2>(velocities[1], player.Velocity) / (old_speed * speeds[1])
+		};
+
+		if (cosangles[0] < cosangles[1]) {
+			VecCopy<float, 2>(velocities[0], player.Velocity);
+			return yaws[0];
+		} else {
+			VecCopy<float, 2>(velocities[1], player.Velocity);
+			return yaws[1];
+		}
+	}
 }
