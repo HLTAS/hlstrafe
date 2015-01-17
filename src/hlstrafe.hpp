@@ -72,7 +72,7 @@ namespace HLStrafe
 	void VectorFME(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const double a[2]);
 
 	/*
-		Finds the best max accel yaw to use taking the anglemod compensation into account, then
+		Finds the best yaw to use for the corresponding strafe type taking the anglemod compensation into account, then
 		strafes sideways with that yaw and returns it in radians, given fixed buttons.
 		The resulting velocity is stored in player.Velocity.
 		Uses the given yaw instead of the Velocity angle if Velocity is zero.
@@ -84,23 +84,11 @@ namespace HLStrafe
 	*/
 	double SideStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
 		double vel_yaw, bool right);
-
-	/*
-		Finds the best max angle yaw to use taking the anglemod compensation into account, then
-		strafes sideways with that yaw and returns it in radians, given fixed buttons.
-		The resulting velocity is stored in player.Velocity.
-		Uses the given yaw instead of the Velocity angle if Velocity is zero.
-		Postype != WATER.
-
-		Struct requirements:
-			Velocity;
-			Frametime, Accelerate or Airaccelerate, EntFriction.
-	*/
 	double SideStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
 		double vel_yaw, bool right);
 
 	/*
-		Finds the best max accel yaw to use taking the anglemod compensation into account, then
+		Finds the best yaw to use for the corresponding strafe type taking the anglemod compensation into account, then
 		strafes to the best dir with that yaw and returns it in radians, given fixed buttons.
 		The resulting velocity is stored in player.Velocity.
 		Uses the given yaw instead of the Velocity angle if Velocity is zero.
@@ -111,5 +99,7 @@ namespace HLStrafe
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
 	double BestStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+		double vel_yaw);
+	double BestStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
 		double vel_yaw);
 }
