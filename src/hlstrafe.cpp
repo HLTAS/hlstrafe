@@ -167,6 +167,32 @@ namespace HLStrafe
 		}
 	}
 
+	double SideStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+		double vel_yaw, bool right)
+	{
+		assert(postype != PositionType::WATER);
+
+		double theta = MaxAngleTheta(player, vars, postype, wishspeed);
+		float velocities[2][2];
+		double yaws[2];
+		SideStrafeGeneral(player, vars, postype, wishspeed, buttons, vel_yaw, theta, right, true, velocities, yaws);
+
+		double old_speed = Length<float, 2>(player.Velocity);
+		double speeds[2] = { Length<float, 2>(velocities[0]), Length<float, 2>(velocities[1]) };
+		double cosangles[2] = {
+			DotProduct<float, float, 2>(velocities[0], player.Velocity) / (old_speed * speeds[0]),
+			DotProduct<float, float, 2>(velocities[1], player.Velocity) / (old_speed * speeds[1])
+		};
+
+		if (cosangles[0] < cosangles[1]) {
+			VecCopy<float, 2>(velocities[0], player.Velocity);
+			return yaws[0];
+		} else {
+			VecCopy<float, 2>(velocities[1], player.Velocity);
+			return yaws[1];
+		}
+	}
+
 	double BestStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
 		double vel_yaw)
 	{

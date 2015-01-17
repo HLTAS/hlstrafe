@@ -85,6 +85,20 @@ namespace HLStrafe
 		double vel_yaw, bool right);
 
 	/*
+		Finds the best max angle yaw to use taking the anglemod compensation into account, then
+		strafes sideways with that yaw and returns it in radians, given fixed buttons.
+		The resulting velocity is stored in player.Velocity.
+		Uses the given yaw instead of the Velocity angle if Velocity is zero.
+		Postype != WATER.
+
+		Struct requirements:
+			Velocity;
+			Frametime, Accelerate or Airaccelerate, EntFriction.
+	*/
+	double SideStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+		double vel_yaw, bool right);
+
+	/*
 		Finds the best max accel yaw to use taking the anglemod compensation into account, then
 		strafes to the best dir with that yaw and returns it in radians, given fixed buttons.
 		The resulting velocity is stored in player.Velocity.
