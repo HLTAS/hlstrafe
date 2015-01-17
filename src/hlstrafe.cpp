@@ -107,12 +107,12 @@ namespace HLStrafe
 	}
 
 	static void SideStrafeGeneral(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed,
-		HLTAS::Button buttons, double vel_yaw, double theta, bool clockwise, bool safeguard_yaw, float velocities[2][2], double yaws[2])
+		HLTAS::Button buttons, double vel_yaw, double theta, bool right, bool safeguard_yaw, float velocities[2][2], double yaws[2])
 	{
 		assert(postype != PositionType::WATER);
 
 		double phi = ButtonsPhi(buttons);
-		theta = clockwise ? -theta : theta;
+		theta = right ? -theta : theta;
 
 		if (!IsZero<float, 2>(player.Velocity))
 			vel_yaw = std::atan2(player.Velocity[1], player.Velocity[0]);
