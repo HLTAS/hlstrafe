@@ -118,4 +118,19 @@ namespace HLStrafe
 		double vel_yaw, double yaw);
 	double YawStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
 		double vel_yaw, double yaw);
+
+	/*
+		Finds the best yaw to use for the given strafe type taking the anglemod compensation into account, then
+		strafes to the given point if needed with that yaw and returns it in radians, given fixed buttons. If not strafing
+		is better, set strafed to false, otherwise - to true.
+		The resulting velocity is stored in player.Velocity.
+		Uses vel_yaw instead of the Velocity angle if Velocity is zero.
+		Postype != WATER.
+
+		Struct requirements:
+			Velocity, Origin;
+			Frametime, Accelerate or Airaccelerate, EntFriction.
+	*/
+	double PointStrafe(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+		double vel_yaw, HLTAS::StrafeType type, float point[2], bool& strafed);
 }

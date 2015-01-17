@@ -1,6 +1,7 @@
 #pragma once
 #include <cmath>
 #include <cstddef>
+#include <type_traits>
 
 namespace HLStrafe
 {
@@ -17,6 +18,20 @@ namespace HLStrafe
 	{
 		for (std::size_t i = 0; i < size; ++i)
 			to[i] = from[i];
+	}
+
+	template<typename T1, typename T2, std::size_t size = 3>
+	inline void VecAdd(const T1 a[], const T2 b[], typename std::common_type<T1, T2>::type c[])
+	{
+		for (std::size_t i = 0; i < size; ++i)
+			c[i] = a[i] + b[i];
+	}
+
+	template<typename T1, typename T2, std::size_t size = 3>
+	inline void VecSubtract(const T1 a[], const T2 b[], typename std::common_type<T1, T2>::type c[])
+	{
+		for (std::size_t i = 0; i < size; ++i)
+			c[i] = a[i] - b[i];
 	}
 
 	template<typename T, std::size_t size = 3>
@@ -45,6 +60,25 @@ namespace HLStrafe
 		for (std::size_t i = 0; i < size; ++i)
 			result += a[i] * b[i];
 		return result;
+	}
+
+	template<typename T1, typename T2, std::size_t size = 3>
+	inline double Distance(const T1 a[], const T2 b[])
+	{
+		using res_type = typename std::common_type<T1, T2>::type;
+		res_type c[size];
+		VecSubtract<T2, T1, size>(b, a, c);
+		return Length<res_type>(c);
+	}
+
+	template<typename T1, typename T2, std::size_t size = 3>
+	inline double AngleRad(const T1 a[], const T2 b[])
+	{
+		assert(( !IsZero<T1, size>(a) && !IsZero<T2, size>(b) ));
+		assert(( Distance<T1, T2, size>(a, b) != 0 ));
+
+		double ls[] = { Length<T1, size>(a), Length<T2, size>(b) };
+		return (DotProduct<T1, T2, size>(a, b) / (ls[0] * ls[1]));
 	}
 
 	inline double AngleModRad(double a)

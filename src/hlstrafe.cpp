@@ -303,4 +303,32 @@ namespace HLStrafe
 			return yaws[1];
 		}
 	}
+
+	double PointStrafe(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+		double vel_yaw, HLTAS::StrafeType type, float point[2], bool& strafed)
+	{
+		assert(postype != PositionType::WATER);
+
+		// Covers the case where both vectors are zero.
+		if (Distance<float, float, 2>(player.Origin, point) <= 10.0) {
+			strafed = false;
+			return 0.0;
+		}
+		strafed = true;
+
+		double yaw;
+		if (IsZero<float, 2>(player.Origin))
+			yaw = std::atan2(point[1], point[0]);
+		else if (IsZero<float, 2>(point))
+			yaw = std::atan2(player.Origin[1], player.Origin[0]);
+		else
+			yaw = AngleRad<float, float, 2>(player.Origin, point);
+
+		switch (type) {
+		case HLTAS::StrafeType::MAXACCEL: return YawStrafeMaxAccel(player, vars, postype, wishspeed, buttons, vel_yaw, yaw);
+		default:
+		case HLTAS::StrafeType::MAXANGLE: return YawStrafeMaxAngle(player, vars, postype, wishspeed, buttons, vel_yaw, yaw);
+		// TODO add the rest of the calls when the functions are done.
+		}
+	}
 }
