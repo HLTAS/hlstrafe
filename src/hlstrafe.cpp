@@ -92,8 +92,8 @@ namespace HLStrafe
 		if (accelspeed <= tmp)
 			tmp = accelspeed;
 
-		player.Velocity[0] += a[0] * tmp;
-		player.Velocity[1] += a[1] * tmp;
+		player.Velocity[0] += static_cast<float>(a[0] * tmp);
+		player.Velocity[1] += static_cast<float>(a[1] * tmp);
 	}
 
 	inline double ButtonsPhi(HLTAS::Button button)
