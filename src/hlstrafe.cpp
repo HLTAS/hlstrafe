@@ -42,10 +42,11 @@ namespace HLStrafe
 		return std::copysign(theta, NormalizeRad(yaw - vel_yaw));
 	}
 
-	double MaxAngleTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed)
+	double MaxAngleTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, bool& safeguard_yaw)
 	{
 		assert(postype != PositionType::WATER);
 
+		safeguard_yaw = false;
 		bool onground = (postype == PositionType::GROUND);
 		double speed = Length<float, 2>(player.Velocity);
 		double accel = onground ? vars.Accelerate : vars.Airaccelerate;
@@ -56,13 +57,17 @@ namespace HLStrafe
 			if (accelspeed >= speed) {
 				if (wishspeed_capped >= speed)
 					return 0.0;
-				else
+				else {
+					safeguard_yaw = true;
 					return std::acos(wishspeed_capped / speed); // The actual angle needs to be _less_ than this.
+				}
 			} else {
 				if (wishspeed_capped >= speed)
 					return std::acos(accelspeed / speed);
-				else
+				else {
+					safeguard_yaw = (wishspeed_capped <= accelspeed);
 					return std::acos(std::min(accelspeed, wishspeed_capped) / speed); // The actual angle needs to be _less_ than this if wishspeed_capped <= accelspeed.
+				}
 			}
 		} else {
 			if (accelspeed >= speed)
@@ -172,10 +177,11 @@ namespace HLStrafe
 	{
 		assert(postype != PositionType::WATER);
 
-		double theta = MaxAngleTheta(player, vars, postype, wishspeed);
+		bool safeguard_yaw;
+		double theta = MaxAngleTheta(player, vars, postype, wishspeed, safeguard_yaw);
 		float velocities[2][2];
 		double yaws[2];
-		SideStrafeGeneral(player, vars, postype, wishspeed, buttons, vel_yaw, theta, right, true, velocities, yaws);
+		SideStrafeGeneral(player, vars, postype, wishspeed, buttons, vel_yaw, theta, right, safeguard_yaw, velocities, yaws);
 
 		double old_speed = Length<float, 2>(player.Velocity);
 		double speeds[2] = { Length<float, 2>(velocities[0]), Length<float, 2>(velocities[1]) };

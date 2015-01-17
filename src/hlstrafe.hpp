@@ -52,13 +52,14 @@ namespace HLStrafe
 
 	/*
 		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
-		result in maximal velocity angle change. Postype != WATER.
+		result in maximal velocity angle change. Sets safeguard_yaw to true if the yaw safeguard
+		is needed and to false otherwise. Postype != WATER.
 
 		Struct requirements:
 			Velocity;
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
-	double MaxAngleTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed);
+	double MaxAngleTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, bool& safeguard_yaw);
 
 	/*
 		Computes the new velocity given unit acceleration vector and wishspeed
