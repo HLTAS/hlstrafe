@@ -330,7 +330,7 @@ namespace HLStrafe
 
 	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame)
 	{
-		ProcessedFrame out = {};
+		auto out = ProcessedFrame();
 
 		out.Pitch = player.Viewangles[0];
 		out.Yaw = player.Viewangles[1];

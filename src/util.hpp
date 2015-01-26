@@ -68,7 +68,7 @@ namespace HLStrafe
 		using res_type = typename std::common_type<T1, T2>::type;
 		res_type c[size];
 		VecSubtract<T2, T1, size>(b, a, c);
-		return Length<res_type>(c);
+		return Length<res_type, size>(c);
 	}
 
 	template<typename T1, typename T2, std::size_t size = 3>
