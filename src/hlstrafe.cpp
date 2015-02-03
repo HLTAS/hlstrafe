@@ -340,7 +340,7 @@ namespace HLStrafe
 		}
 	}
 
-	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, const HLTAS::StrafeButtons& strafeButtons)
+	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons)
 	{
 		auto out = ProcessedFrame();
 
