@@ -91,9 +91,10 @@ namespace HLStrafe
 	{
 		a = std::fmod(a, M_PI * 2);
 		if (a > M_PI)
-			return (a - M_PI);
-		else
-			return a;
+			a -= 2 * M_PI;
+		else if (a < -M_PI)
+			a += 2 * M_PI;
+		return a;
 	}
 
 	// Convert both arguments to doubles.
