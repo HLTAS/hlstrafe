@@ -58,7 +58,7 @@ namespace HLStrafe
 		All-in-one function that does everything and returns the buttons,
 		viewangles and FSU.
 	*/
-	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame);
+	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, const HLTAS::StrafeButtons& strafeButtons);
 
 	/*
 		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
@@ -113,9 +113,9 @@ namespace HLStrafe
 			Velocity;
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
-	double SideStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+	double SideStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons,
 		double vel_yaw, bool right);
-	double SideStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+	double SideStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons,
 		double vel_yaw, bool right);
 
 	/*
@@ -129,9 +129,9 @@ namespace HLStrafe
 			Velocity;
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
-	double BestStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+	double BestStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons,
 		double vel_yaw);
-	double BestStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+	double BestStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons,
 		double vel_yaw);
 
 	/*
@@ -145,9 +145,9 @@ namespace HLStrafe
 			Velocity;
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
-	double YawStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+	double YawStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons,
 		double vel_yaw, double yaw);
-	double YawStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+	double YawStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons,
 		double vel_yaw, double yaw);
 
 	/*
@@ -162,6 +162,6 @@ namespace HLStrafe
 			Velocity, Origin;
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
-	double PointStrafe(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, HLTAS::Button buttons,
+	double PointStrafe(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons,
 		double vel_yaw, HLTAS::StrafeType type, float point[2], bool& strafed);
 }
