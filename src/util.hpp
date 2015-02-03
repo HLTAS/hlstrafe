@@ -90,7 +90,7 @@ namespace HLStrafe
 	inline double NormalizeRad(double a)
 	{
 		a = std::fmod(a, M_PI * 2);
-		if (a > M_PI)
+		if (a >= M_PI)
 			a -= 2 * M_PI;
 		else if (a < -M_PI)
 			a += 2 * M_PI;
