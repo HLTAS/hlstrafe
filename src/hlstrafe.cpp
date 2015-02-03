@@ -349,10 +349,15 @@ namespace HLStrafe
 		out.Attack2 = frame.Attack2;
 		out.Reload = frame.Reload;
 
-		out.Forwardspeed = 10000.0f;
-		out.Sidespeed = 10000.0f;
-		out.Backspeed = 10000.0f;
-		out.Upspeed = 10000.0f;
+		out.Forwardspeed = vars.Maxspeed;
+		out.Sidespeed = vars.Maxspeed;
+		out.Backspeed = vars.Maxspeed;
+		out.Upspeed = vars.Maxspeed;
+
+		if (frame.PitchPresent)
+			out.Pitch = frame.GetPitch();
+		if (!frame.Strafe && frame.GetYawPresent())
+			out.Yaw = AngleModRad(frame.GetYaw() * M_DEG2RAD) * M_RAD2DEG;
 
 		return out;
 	}
