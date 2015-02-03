@@ -89,7 +89,11 @@ namespace HLStrafe
 	// Return angle in [-Pi; Pi).
 	inline double NormalizeRad(double a)
 	{
-		return std::fmod(a, M_PI);
+		while (a >= M_PI)
+			a -= M_PI * 2;
+		while (a < -M_PI)
+			a += M_PI * 2;
+		return a;
 	}
 
 	// Convert both arguments to doubles.
