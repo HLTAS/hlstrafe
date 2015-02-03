@@ -83,7 +83,7 @@ namespace HLStrafe
 
 	inline double AngleModRad(double a)
 	{
-		return M_U_RAD * ((int)(a * M_INVU_RAD) & 0xffff);
+		return M_U_RAD * (static_cast<int>(a * M_INVU_RAD) & 0xffff);
 	}
 
 	// Return angle in [-Pi; Pi).
