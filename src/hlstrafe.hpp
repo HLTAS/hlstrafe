@@ -60,6 +60,14 @@ namespace HLStrafe
 	*/
 	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons);
 
+	double GetPitchDifference(float oldpitch, float newpitch);
+	double GetYawDifference(float oldyaw, float newyaw);
+
+	/*
+		Returns the string to put into the command buffer to change the viewangles.
+	*/
+	std::string GetAngleSpeedString(float oldpitch, float oldyaw, float newpitch, float newyaw, double pitchStateMultiplier, double yawStateMultiplier, double frametime);
+
 	/*
 		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
 		result in maximal speed gain. Postype != WATER.

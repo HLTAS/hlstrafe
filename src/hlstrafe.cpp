@@ -5,6 +5,9 @@
 #include "hlstrafe.hpp"
 #include "util.hpp"
 
+#define NOMINMAX
+#include <windows.h>
+
 namespace HLStrafe
 {
 	double MaxAccelTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed)
@@ -372,5 +375,46 @@ namespace HLStrafe
 			out.Yaw = AngleModRad(frame.GetYaw() * M_DEG2RAD) * M_RAD2DEG;
 
 		return out;
+	}
+
+	double GetPitchDifference(float oldpitch, float newpitch)
+	{
+		return Normalize(static_cast<double>(newpitch) - oldpitch);
+	}
+
+	double GetYawDifference(float oldyaw, float newyaw)
+	{
+		return Normalize(static_cast<double>(newyaw) - oldyaw + M_U_HALF);
+	}
+
+	std::string GetAngleSpeedString(float oldpitch, float oldyaw, float newpitch, float newyaw, double pitchStateMultiplier, double yawStateMultiplier, double frametime)
+	{
+		std::ostringstream ss;
+		ss.setf(std::ios::fixed, std::ios::floatfield);
+		ss.precision(std::numeric_limits<double>::digits10);
+
+		if (newpitch != oldpitch) {
+			double pitchDifference = std::abs(GetPitchDifference(oldpitch, newpitch));
+			double pitchspeed = (pitchDifference / frametime) / pitchStateMultiplier;
+			std::ostringstream o;
+			o.setf(std::ios::fixed, std::ios::floatfield);
+			o.precision(std::numeric_limits<double>::digits10);
+			o << "oldpitch: " << oldpitch << " newpitch: " << newpitch << " pitchDifference: " << pitchDifference << " frametime: " << frametime << " pitchStateMultiplier: " << pitchStateMultiplier << " pitchspeed: " << pitchspeed << '\n';
+			OutputDebugString(o.str().c_str());
+			ss << "cl_pitchspeed " << pitchspeed << '\n';
+		}
+
+		if (newyaw != oldyaw) {
+			double yawDifference = std::abs(GetYawDifference(oldyaw, newyaw));
+			double yawspeed = (yawDifference / frametime) / yawStateMultiplier;
+			std::ostringstream o;
+			o.setf(std::ios::fixed, std::ios::floatfield);
+			o.precision(std::numeric_limits<double>::digits10);
+			o << "oldyaw: " << oldyaw << " newyaw: " << newyaw << " yawDifference: " << yawDifference << " frametime: " << frametime << " yawStateMultiplier: " << yawStateMultiplier << " yawspeed: " << yawspeed << '\n';
+			OutputDebugString(o.str().c_str());
+			ss << "cl_yawspeed " << yawspeed << '\n';
+		}
+
+		return ss.str();
 	}
 }
