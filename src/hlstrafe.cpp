@@ -387,7 +387,7 @@ namespace HLStrafe
 		return Normalize(static_cast<double>(newyaw) - oldyaw + M_U_HALF);
 	}
 
-	std::string GetAngleSpeedString(float oldpitch, float oldyaw, float newpitch, float newyaw, double pitchStateMultiplier, double yawStateMultiplier, double frametime)
+	std::string GetAngleSpeedString(float oldpitch, float oldyaw, float newpitch, float newyaw, double pitchStateMultiplier, double yawStateMultiplier, float frametime)
 	{
 		std::ostringstream ss;
 		ss.setf(std::ios::fixed, std::ios::floatfield);
