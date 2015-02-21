@@ -426,6 +426,8 @@ namespace HLStrafe
 
 		Autojump(playerCopy, postype, frame, curState, out);
 
+		curState.Jump = out.Jump;
+		curState.Duck = out.Duck;
 		return out;
 	}
 
