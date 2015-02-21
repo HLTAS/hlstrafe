@@ -343,7 +343,49 @@ namespace HLStrafe
 		}
 	}
 
-	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons)
+	PositionType GetPositionType(PlayerData& player, TraceFunc traceFunc)
+	{
+		const float VEC_HULL_MIN[3] = { -16, -16, -36 };
+		const float VEC_HULL_MAX[3] = {  16,  16,  36 };
+		const float VEC_DUCK_HULL_MIN[3] = { -16, -16, -18 };
+		const float VEC_DUCK_HULL_MAX[3] = {  16,  16,  36 };
+
+		// TODO: Check water. If we're under water, return here.
+
+		// Check ground.
+		if (player.Velocity[2] > 180)
+			return PositionType::AIR;
+
+		float point[3];
+		VecCopy<float, 3>(player.Origin, point);
+		point[2] -= 2;
+
+		auto tr = traceFunc(player.Origin, point, (player.Ducking) ? HullType::DUCKED : HullType::NORMAL);
+		if (tr.PlaneNormal[2] < 0.7 || tr.Entity == -1)
+			return PositionType::AIR;
+
+		if (!tr.StartSolid && !tr.AllSolid)
+			VecCopy<float, 3>(tr.EndPos, player.Origin);
+		return PositionType::GROUND;
+	}
+
+	void Autojump(PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out)
+	{
+		assert(postype != PositionType::WATER);
+
+		if (!frame.Autojump && !curState.AutojumpsLeft)
+			return;
+
+		if (postype == PositionType::GROUND && !curState.Jump) {
+			out.Jump = true;
+			player.Velocity[2] = static_cast<float>(std::sqrt(2 * 800 * 45.0)); // No LJ.
+
+			if (curState.AutojumpsLeft)
+				curState.AutojumpsLeft--;
+		}
+	}
+
+	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, TraceFunc traceFunc)
 	{
 		auto out = ProcessedFrame();
 
@@ -370,9 +412,19 @@ namespace HLStrafe
 		out.Upspeed = vars.Maxspeed;
 
 		if (frame.PitchPresent)
-			out.Pitch = frame.GetPitch();
+			out.Pitch = static_cast<float>(frame.GetPitch());
 		if (!frame.Strafe && frame.GetYawPresent())
-			out.Yaw = AngleModRad(frame.GetYaw() * M_DEG2RAD) * M_RAD2DEG;
+			out.Yaw = static_cast<float>(AngleModRad(frame.GetYaw() * M_DEG2RAD) * M_RAD2DEG);
+
+		if (frame.Autojump)
+			curState.AutojumpsLeft = frame.GetAutojumpTimes();
+
+		auto playerCopy = PlayerData(player); // Our copy that we will mess with.
+		auto postype = GetPositionType(playerCopy, traceFunc);
+		if (postype == PositionType::WATER)
+			return out;
+
+		Autojump(playerCopy, postype, frame, curState, out);
 
 		return out;
 	}

@@ -1,4 +1,6 @@
 #pragma once
+#include <functional>
+
 #include "hltas.hpp"
 
 namespace HLStrafe
@@ -7,6 +9,7 @@ namespace HLStrafe
 		float Origin[3];
 		float Velocity[3];
 		float Viewangles[3];
+		bool Ducking;
 	};
 
 	struct MovementVars {
@@ -21,13 +24,6 @@ namespace HLStrafe
 		float Airaccelerate;
 		float Gravity;
 		float EntGravity; // Aka pmove->gravity.
-	};
-
-	// On ground, in the air or underwater.
-	enum class PositionType {
-		GROUND = 0,
-		AIR,
-		WATER
 	};
 
 	struct ProcessedFrame {
@@ -54,11 +50,42 @@ namespace HLStrafe
 		float Upspeed;
 	};
 
+	struct CurrentState {
+		bool Jump;
+		bool Duck;
+		unsigned AutojumpsLeft;
+	};
+
+	struct TraceResult {
+		bool AllSolid;
+		bool StartSolid;
+		float Fraction;
+		float EndPos[3];
+		float PlaneNormal[3];
+		int Entity;
+	};
+
+	// On ground, in the air or underwater.
+	enum class PositionType {
+		GROUND = 0,
+		AIR,
+		WATER
+	};
+
+	enum class HullType : int {
+		NORMAL = 0,
+		DUCKED = 1,
+		POINT = 2
+	};
+
+	typedef std::function<TraceResult(const float[3], const float[3], HLStrafe::HullType)> TraceFunc;
+
 	/*
 		All-in-one function that does everything and returns the buttons,
-		viewangles and FSU.
+		viewangles and FSU. Modifies curState. You should keep the curState
+		and pass it to the function next time it's invoked (next frame usually).
 	*/
-	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons);
+	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, TraceFunc traceFunc);
 
 	/*
 		Returns the difference between two angles in a [-180; 180) range.
@@ -71,6 +98,13 @@ namespace HLStrafe
 		Returns the string to put into the command buffer to change the viewangles.
 	*/
 	std::string GetAngleSpeedString(float oldpitch, float oldyaw, float newpitch, float newyaw, double pitchStateMultiplier, double yawStateMultiplier, float frametime);
+
+	/*
+		Figures out the player's position type and, if necessary, updates player.Origin and curState.
+	*/
+	PositionType GetPositionType(PlayerData& player, TraceFunc traceFunc);
+
+	void Autojump(PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out);
 
 	/*
 		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
