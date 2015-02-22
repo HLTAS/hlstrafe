@@ -369,17 +369,56 @@ namespace HLStrafe
 		return PositionType::GROUND;
 	}
 
-	void Autojump(PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out)
+	void CheckVelocity(PlayerData& player, const MovementVars& vars)
+	{
+		for (std::size_t i = 0; i < 3; ++i) {
+			if (player.Velocity[i] > vars.Maxvelocity)
+				player.Velocity[i] = vars.Maxvelocity;
+			if (player.Velocity[i] < -vars.Maxvelocity)
+				player.Velocity[i] = -vars.Maxvelocity;
+		}
+	}
+
+	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const CurrentState& curState, ProcessedFrame& out)
+	{
+		assert(postype != PositionType::WATER);
+
+		if (!out.Jump // Not pressing Jump.
+			|| curState.Jump // Jump was already down.
+			|| postype != PositionType::GROUND) // Not on ground.
+			return postype;
+
+		if (vars.Bhopcap) {
+			auto maxscaledspeed = 1.7f * vars.Maxspeed;
+			if (maxscaledspeed > 0) {
+				auto speed = Length<float, 3>(player.Velocity);
+				if (speed > maxscaledspeed)
+					VecScale<float, 3>(player.Velocity, (maxscaledspeed / speed) * 0.65, player.Velocity);
+			}
+		}
+
+		// TODO: duck-when autofuncs.
+		// We don't care about the vertical velocity after the jump prediction.
+		if (player.InDuckAnimation || player.Ducking) {
+			if (player.HasLJModule && out.Duck && player.DuckTime > 0 && Length<float, 3>(player.Velocity) > 50) {
+				player.Velocity[0] = std::cos(player.Viewangles[1]) * 350 * 1.6;
+				player.Velocity[1] = std::sin(player.Viewangles[1]) * 350 * 1.6;
+			}
+		}
+		CheckVelocity(player, vars);
+
+		return PositionType::AIR;
+	}
+
+	void Autojump(PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out)
 	{
 		assert(postype != PositionType::WATER);
 
 		if (!frame.Autojump && !curState.AutojumpsLeft)
 			return;
 
-		if (postype == PositionType::GROUND && !curState.Jump) {
+		if (postype == PositionType::GROUND && !curState.Jump && !out.Jump) {
 			out.Jump = true;
-			player.Velocity[2] = static_cast<float>(std::sqrt(2 * 800 * 45.0)); // No LJ.
-
 			if (curState.AutojumpsLeft)
 				curState.AutojumpsLeft--;
 		}
@@ -424,7 +463,19 @@ namespace HLStrafe
 		if (postype == PositionType::WATER)
 			return out;
 
-		Autojump(playerCopy, postype, frame, curState, out);
+		// This order may change.
+		// Jumpbug()
+		// Dbc()
+		// Dbg()
+		// Lgagst-ducktap()
+		// Ducktap()
+		// PredictDuck()
+		// Lgagst-jump()
+		Autojump(postype, frame, curState, out);
+		postype = PredictJump(playerCopy, postype, vars, curState, out);
+		// Friction()
+		CheckVelocity(playerCopy, vars);
+		// Strafe()
 
 		curState.Jump = out.Jump;
 		curState.Duck = out.Duck;

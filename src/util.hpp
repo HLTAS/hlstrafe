@@ -38,6 +38,13 @@ namespace HLStrafe
 	}
 
 	template<typename T, std::size_t size = 3>
+	inline void VecScale(const T from[], double scale, T to[])
+	{
+		for (std::size_t i = 0; i < size; ++i)
+			to[i] = from[i] * scale;
+	}
+
+	template<typename T, std::size_t size = 3>
 	inline bool IsZero(const T vec[])
 	{
 		for (std::size_t i = 0; i < size; ++i)

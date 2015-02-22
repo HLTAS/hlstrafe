@@ -9,7 +9,12 @@ namespace HLStrafe
 		float Origin[3];
 		float Velocity[3];
 		float Viewangles[3];
+
 		bool Ducking;
+		bool InDuckAnimation;
+		float DuckTime;
+
+		bool HasLJModule;
 	};
 
 	struct MovementVars {
@@ -24,6 +29,7 @@ namespace HLStrafe
 		float Airaccelerate;
 		float Gravity;
 		float EntGravity; // Aka pmove->gravity.
+		bool Bhopcap;
 	};
 
 	struct ProcessedFrame {
@@ -104,7 +110,18 @@ namespace HLStrafe
 	*/
 	PositionType GetPositionType(PlayerData& player, TraceFunc traceFunc);
 
-	void Autojump(PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out);
+	/*
+		Limits the velocity components to maxvelocity.
+	*/
+	void CheckVelocity(PlayerData& player, const MovementVars& vars);
+
+	/*
+		Changes the player data the same way as PM_Jump would, returns a new postype.
+		Changes the processed frame in case of some duck-when autofuncs.
+	*/
+	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const CurrentState& curState, ProcessedFrame& out);
+
+	void Autojump(PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out);
 
 	/*
 		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
