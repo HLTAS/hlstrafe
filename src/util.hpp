@@ -12,7 +12,7 @@ namespace HLStrafe
 	const double M_DEG2RAD = M_PI / 180;
 	const double M_U_RAD = M_PI / 32768;
 	const double M_INVU_RAD = 32768 / M_PI;
-	const double M_U_HALF = 180.0 / 65536;
+	const double M_U_DEG_HALF = 180.0 / 65536;
 
 	template<typename T, std::size_t size = 3>
 	inline void VecCopy(const T from[], T to[])

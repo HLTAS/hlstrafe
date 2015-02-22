@@ -438,7 +438,7 @@ namespace HLStrafe
 
 	double GetYawDifference(float oldyaw, float newyaw)
 	{
-		return Normalize(static_cast<double>(newyaw) - oldyaw + M_U_HALF);
+		return Normalize(static_cast<double>(newyaw) - oldyaw + M_U_DEG_HALF);
 	}
 
 	std::string GetAngleSpeedString(float oldpitch, float oldyaw, float newpitch, float newyaw, double pitchStateMultiplier, double yawStateMultiplier, float frametime)
