@@ -401,8 +401,8 @@ namespace HLStrafe
 		// We don't care about the vertical velocity after the jump prediction.
 		if (player.InDuckAnimation || player.Ducking) {
 			if (player.HasLJModule && out.Duck && player.DuckTime > 0 && Length<float, 3>(player.Velocity) > 50) {
-				player.Velocity[0] = std::cos(player.Viewangles[1]) * 350 * 1.6;
-				player.Velocity[1] = std::sin(player.Viewangles[1]) * 350 * 1.6;
+				player.Velocity[0] = std::cos(player.Viewangles[1] * M_DEG2RAD) * 350 * 1.6;
+				player.Velocity[1] = std::sin(player.Viewangles[1] * M_DEG2RAD) * 350 * 1.6;
 			}
 		}
 		CheckVelocity(player, vars);
