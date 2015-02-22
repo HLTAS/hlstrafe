@@ -414,7 +414,7 @@ namespace HLStrafe
 		if (frame.PitchPresent)
 			out.Pitch = static_cast<float>(frame.GetPitch());
 		if (!frame.Strafe && frame.GetYawPresent())
-			out.Yaw = static_cast<float>(AngleModRad(frame.GetYaw() * M_DEG2RAD) * M_RAD2DEG);
+			out.Yaw = static_cast<float>(AngleModDeg(frame.GetYaw()));
 
 		if (frame.Autojump)
 			curState.AutojumpsLeft = frame.GetAutojumpTimes();

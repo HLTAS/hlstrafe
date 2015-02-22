@@ -11,7 +11,9 @@ namespace HLStrafe
 	const double M_RAD2DEG = 180 / M_PI;
 	const double M_DEG2RAD = M_PI / 180;
 	const double M_U_RAD = M_PI / 32768;
+	const double M_U_DEG = 360.0 / 65536;
 	const double M_INVU_RAD = 32768 / M_PI;
+	const double M_INVU_DEG = 65536.0 / 360;
 	const double M_U_DEG_HALF = 180.0 / 65536;
 
 	template<typename T, std::size_t size = 3>
@@ -85,6 +87,11 @@ namespace HLStrafe
 	inline double AngleModRad(double a)
 	{
 		return M_U_RAD * (static_cast<int>(a * M_INVU_RAD) & 0xffff);
+	}
+
+	inline double AngleModDeg(double a)
+	{
+		return M_U_DEG * (static_cast<int>(a * M_INVU_DEG) & 0xffff);
 	}
 
 	// Return angle in [-Pi; Pi).
