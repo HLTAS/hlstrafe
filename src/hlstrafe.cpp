@@ -5,8 +5,8 @@
 #include "hlstrafe.hpp"
 #include "util.hpp"
 
-#define NOMINMAX
-#include <windows.h>
+// #define NOMINMAX
+// #include <windows.h>
 
 namespace HLStrafe
 {
@@ -450,22 +450,22 @@ namespace HLStrafe
 		if (newpitch != oldpitch) {
 			double pitchDifference = std::abs(GetPitchDifference(oldpitch, newpitch));
 			double pitchspeed = (pitchDifference / frametime) / pitchStateMultiplier;
-			std::ostringstream o;
-			o.setf(std::ios::fixed, std::ios::floatfield);
-			o.precision(std::numeric_limits<double>::digits10);
-			o << "oldpitch: " << oldpitch << " newpitch: " << newpitch << " pitchDifference: " << pitchDifference << " frametime: " << frametime << " pitchStateMultiplier: " << pitchStateMultiplier << " pitchspeed: " << pitchspeed << '\n';
-			OutputDebugString(o.str().c_str());
+			// std::ostringstream o;
+			// o.setf(std::ios::fixed, std::ios::floatfield);
+			// o.precision(std::numeric_limits<double>::digits10);
+			// o << "oldpitch: " << oldpitch << " newpitch: " << newpitch << " pitchDifference: " << pitchDifference << " frametime: " << frametime << " pitchStateMultiplier: " << pitchStateMultiplier << " pitchspeed: " << pitchspeed << '\n';
+			// OutputDebugString(o.str().c_str());
 			ss << "cl_pitchspeed " << pitchspeed << '\n';
 		}
 
 		if (newyaw != oldyaw) {
 			double yawDifference = std::abs(GetYawDifference(oldyaw, newyaw));
 			double yawspeed = (yawDifference / frametime) / yawStateMultiplier;
-			std::ostringstream o;
-			o.setf(std::ios::fixed, std::ios::floatfield);
-			o.precision(std::numeric_limits<double>::digits10);
-			o << "oldyaw: " << oldyaw << " newyaw: " << newyaw << " yawDifference: " << yawDifference << " frametime: " << frametime << " yawStateMultiplier: " << yawStateMultiplier << " yawspeed: " << yawspeed << '\n';
-			OutputDebugString(o.str().c_str());
+			// std::ostringstream o;
+			// o.setf(std::ios::fixed, std::ios::floatfield);
+			// o.precision(std::numeric_limits<double>::digits10);
+			// o << "oldyaw: " << oldyaw << " newyaw: " << newyaw << " yawDifference: " << yawDifference << " frametime: " << frametime << " yawStateMultiplier: " << yawStateMultiplier << " yawspeed: " << yawspeed << '\n';
+			// OutputDebugString(o.str().c_str());
 			ss << "cl_yawspeed " << yawspeed << '\n';
 		}
 
