@@ -571,6 +571,8 @@ namespace HLStrafe
 
 		if (frame.Autojump)
 			curState.AutojumpsLeft = frame.GetAutojumpTimes();
+		if (frame.Ducktap)
+			curState.DucktapsLeft = frame.GetDucktapTimes();
 
 		auto playerCopy = PlayerData(player); // Our copy that we will mess with.
 		auto postype = GetPositionType(playerCopy, traceFunc);
