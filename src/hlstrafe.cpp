@@ -371,6 +371,55 @@ namespace HLStrafe
 		}
 	}
 
+	PositionType PredictDuck(PlayerData& player, PositionType postype, const MovementVars& vars, const CurrentState& curState, const ProcessedFrame& out, TraceFunc traceFunc)
+	{
+		if (!out.Duck
+			&& !player.InDuckAnimation
+			&& !player.Ducking)
+			return postype;
+
+		if (out.Duck) {
+			if (!curState.Duck && !player.Ducking) {
+				player.DuckTime = 1000;
+				player.InDuckAnimation = true;
+			}
+
+			if (player.InDuckAnimation
+				&& (player.DuckTime / 1000.0 <= (1.0 - 0.4)
+					|| postype != PositionType::GROUND)) {
+				player.Ducking = true;
+				player.InDuckAnimation = false;
+				if (postype == PositionType::GROUND) {
+					for (std::size_t i = 0; i < 3; ++i)
+						player.Origin[i] -= (VEC_DUCK_HULL_MIN[i] - VEC_HULL_MIN[i]);
+					// Is PM_FixPlayerCrouchStuck() prediction needed here?
+					return GetPositionType(player, traceFunc);
+				}
+			}
+		} else {
+			// Unduck.
+			float newOrigin[3];
+			VecCopy<float, 3>(player.Origin, newOrigin);
+			if (postype == PositionType::GROUND)
+				for (std::size_t i = 0; i < 3; ++i)
+					newOrigin[i] += (VEC_DUCK_HULL_MIN[i] - VEC_HULL_MIN[i]);
+
+			auto tr = traceFunc(newOrigin, newOrigin, (player.Ducking) ? HullType::DUCKED : HullType::NORMAL);
+			if (!tr.StartSolid) {
+				tr = traceFunc(newOrigin, newOrigin, HullType::NORMAL);
+				if (!tr.StartSolid) {
+					player.Ducking = false;
+					player.InDuckAnimation = false;
+					player.DuckTime = 0;
+					VecCopy<float, 3>(newOrigin, player.Origin);
+					return GetPositionType(player, traceFunc);
+				}
+			}
+		}
+
+		return postype;
+	}
+
 	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const CurrentState& curState, ProcessedFrame& out)
 	{
 		assert(postype != PositionType::WATER);
@@ -431,6 +480,50 @@ namespace HLStrafe
 		VecScale<float, 3>(player.Velocity, newspeed / speed, player.Velocity);
 	}
 
+	void Ducktap(const PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc)
+	{
+		assert(postype != PositionType::WATER);
+
+		if (!frame.Ducktap && !curState.DucktapsLeft)
+			return;
+		if (postype != PositionType::GROUND)
+			return;
+
+		// Allow ducktapping with pressed duck - release duck if we're on ground and can unduck.
+		// Otherwise we don't want to handle situations where the player is ducking.
+		if (player.Ducking) {
+			float newOrigin[3];
+			VecCopy<float, 3>(player.Origin, newOrigin);
+			for (std::size_t i = 0; i < 3; ++i)
+				newOrigin[i] += (VEC_DUCK_HULL_MIN[i] - VEC_HULL_MIN[i]);
+
+			auto tr = traceFunc(newOrigin, newOrigin, (player.Ducking) ? HullType::DUCKED : HullType::NORMAL);
+			if (!tr.StartSolid) {
+				tr = traceFunc(newOrigin, newOrigin, HullType::NORMAL);
+				if (!tr.StartSolid)
+					out.Duck = false;
+			}
+			
+			return;
+		}
+
+		if (player.InDuckAnimation) {
+			out.Duck = false;
+			if (curState.DucktapsLeft)
+				curState.DucktapsLeft--;
+		} else {
+			// TODO: this should check against the next frame's origin, so this needs a call to Strafe() and stuff.
+			float newOrigin[3];
+			VecCopy<float, 3>(player.Origin, newOrigin);
+			for (std::size_t i = 0; i < 3; ++i)
+				newOrigin[i] += (VEC_DUCK_HULL_MIN[i] - VEC_HULL_MIN[i]);
+
+			auto tr = traceFunc(newOrigin, newOrigin, HullType::NORMAL);
+			if (!tr.StartSolid)
+				out.Duck = true;
+		}
+	}
+
 	void Autojump(PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out)
 	{
 		assert(postype != PositionType::WATER);
@@ -484,13 +577,24 @@ namespace HLStrafe
 		if (postype == PositionType::WATER)
 			return out;
 
+		bool reduceWishspeed = playerCopy.Ducking;
+		// Same as in ReduceTimers().
+		playerCopy.DuckTime = std::max(playerCopy.DuckTime - static_cast<int>(vars.Frametime * 1000), 0.f);
+
 		// This order may change.
 		// Jumpbug()
 		// Dbc()
 		// Dbg()
 		// Lgagst-ducktap()
-		// Ducktap()
-		// PredictDuck()
+		Ducktap(playerCopy, postype, frame, curState, out, traceFunc);
+		postype = PredictDuck(playerCopy, postype, vars, curState, out, traceFunc);
+
+		// This has to be after PredictDuck() since we may have ducktapped,
+		// if this messes with Lgagst-ducktap() then it's the user's problem.
+		// (Though it shouldn't, generally).
+		if (out.Use && postype == PositionType::GROUND)
+			VecScale<float, 3>(playerCopy.Velocity, 0.3, playerCopy.Velocity);
+
 		// Lgagst-jump()
 		Autojump(postype, frame, curState, out);
 		postype = PredictJump(playerCopy, postype, vars, curState, out);

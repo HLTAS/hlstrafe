@@ -59,6 +59,7 @@ namespace HLStrafe
 	struct CurrentState {
 		bool Jump;
 		bool Duck;
+		unsigned DucktapsLeft;
 		unsigned AutojumpsLeft;
 	};
 
@@ -116,6 +117,11 @@ namespace HLStrafe
 	void CheckVelocity(PlayerData& player, const MovementVars& vars);
 
 	/*
+		Changes the player data the same way as PM_Duck would, returns a new postype.
+	*/
+	PositionType PredictDuck(PlayerData& player, PositionType postype, const MovementVars& vars, const CurrentState& curState, const ProcessedFrame& out, TraceFunc traceFunc);
+
+	/*
 		Changes the player data the same way as PM_Jump would, returns a new postype.
 		Changes the processed frame in case of some duck-when autofuncs.
 	*/
@@ -126,6 +132,12 @@ namespace HLStrafe
 	*/
 	void Friction(PlayerData& player, PositionType postype, const MovementVars& vars, TraceFunc traceFunc);
 
+	/*
+		Autofuncs. They modify stuff in curState and also buttons from the ProcessedFrame.
+		Autofuncs generally do NOT release any pressed buttons with an exception of Ducktap
+		(for the sake of ducktapping while ducking the rest of the time).
+	*/
+	void Ducktap(const PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc);
 	void Autojump(PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out);
 
 	/*
