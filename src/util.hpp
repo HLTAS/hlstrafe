@@ -16,6 +16,11 @@ namespace HLStrafe
 	const double M_INVU_DEG = 65536.0 / 360;
 	const double M_U_DEG_HALF = 180.0 / 65536;
 
+	const float VEC_HULL_MIN[3] = { -16, -16, -36 };
+	const float VEC_HULL_MAX[3] = { 16,  16,  36 };
+	const float VEC_DUCK_HULL_MIN[3] = { -16, -16, -18 };
+	const float VEC_DUCK_HULL_MAX[3] = { 16,  16,  18 };
+
 	template<typename T, std::size_t size = 3>
 	inline void VecCopy(const T from[], T to[])
 	{

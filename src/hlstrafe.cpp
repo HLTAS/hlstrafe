@@ -5,9 +5,6 @@
 #include "hlstrafe.hpp"
 #include "util.hpp"
 
-// #define NOMINMAX
-// #include <windows.h>
-
 namespace HLStrafe
 {
 	double MaxAccelTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed)
@@ -345,11 +342,6 @@ namespace HLStrafe
 
 	PositionType GetPositionType(PlayerData& player, TraceFunc traceFunc)
 	{
-		const float VEC_HULL_MIN[3] = { -16, -16, -36 };
-		const float VEC_HULL_MAX[3] = {  16,  16,  36 };
-		const float VEC_DUCK_HULL_MIN[3] = { -16, -16, -18 };
-		const float VEC_DUCK_HULL_MAX[3] = {  16,  16,  36 };
-
 		// TODO: Check water. If we're under water, return here.
 
 		// Check ground.
@@ -401,13 +393,42 @@ namespace HLStrafe
 		// We don't care about the vertical velocity after the jump prediction.
 		if (player.InDuckAnimation || player.Ducking) {
 			if (player.HasLJModule && out.Duck && player.DuckTime > 0 && Length<float, 3>(player.Velocity) > 50) {
-				player.Velocity[0] = std::cos(player.Viewangles[1] * M_DEG2RAD) * std::cos(player.Viewangles[0] * M_DEG2RAD) * 350 * 1.6;
-				player.Velocity[1] = std::sin(player.Viewangles[1] * M_DEG2RAD) * std::cos(player.Viewangles[0] * M_DEG2RAD) * 350 * 1.6;
+				player.Velocity[0] = static_cast<float>(std::cos(player.Viewangles[1] * M_DEG2RAD) * std::cos(player.Viewangles[0] * M_DEG2RAD) * 350 * 1.6);
+				player.Velocity[1] = static_cast<float>(std::sin(player.Viewangles[1] * M_DEG2RAD) * std::cos(player.Viewangles[0] * M_DEG2RAD) * 350 * 1.6);
 			}
 		}
 		CheckVelocity(player, vars);
 
 		return PositionType::AIR;
+	}
+
+	void Friction(PlayerData& player, PositionType postype, const MovementVars& vars, TraceFunc traceFunc)
+	{
+		if (postype != PositionType::GROUND)
+			return;
+
+		// Doing all this in floats, mismatch is too real otherwise.
+		auto speed = static_cast<float>( std::sqrt(static_cast<double>(player.Velocity[0] * player.Velocity[0] + player.Velocity[1] * player.Velocity[1] + player.Velocity[2] * player.Velocity[2])) );
+		if (speed < 0.1)
+			return;
+
+		auto friction = float{ vars.Friction * vars.EntFriction };
+
+		float start[3], stop[3];
+		start[0] = static_cast<float>(player.Origin[0] + player.Velocity[0] / speed * 16);
+		start[1] = static_cast<float>(player.Origin[1] + player.Velocity[1] / speed * 16);
+		start[2] = player.Origin[2] + ((player.Ducking) ? VEC_DUCK_HULL_MIN[2] : VEC_HULL_MIN[2]);
+		VecCopy<float, 3>(start, stop);
+		stop[2] -= 34;
+
+		auto tr = traceFunc(start, stop, (player.Ducking) ? HullType::DUCKED : HullType::NORMAL);
+		if (tr.Fraction == 1.0)
+			friction *= vars.Edgefriction;
+
+		auto control = (speed < vars.Stopspeed) ? vars.Stopspeed : speed;
+		auto drop = control * friction * vars.Frametime;
+		auto newspeed = std::max(speed - drop, 0.f);
+		VecScale<float, 3>(player.Velocity, newspeed / speed, player.Velocity);
 	}
 
 	void Autojump(PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out)
@@ -473,7 +494,7 @@ namespace HLStrafe
 		// Lgagst-jump()
 		Autojump(postype, frame, curState, out);
 		postype = PredictJump(playerCopy, postype, vars, curState, out);
-		// Friction()
+		Friction(playerCopy, postype, vars, traceFunc);
 		CheckVelocity(playerCopy, vars);
 		// Strafe()
 
@@ -501,22 +522,12 @@ namespace HLStrafe
 		if (newpitch != oldpitch) {
 			double pitchDifference = std::abs(GetPitchDifference(oldpitch, newpitch));
 			double pitchspeed = (pitchDifference / frametime) / pitchStateMultiplier;
-			// std::ostringstream o;
-			// o.setf(std::ios::fixed, std::ios::floatfield);
-			// o.precision(std::numeric_limits<double>::digits10);
-			// o << "oldpitch: " << oldpitch << " newpitch: " << newpitch << " pitchDifference: " << pitchDifference << " frametime: " << frametime << " pitchStateMultiplier: " << pitchStateMultiplier << " pitchspeed: " << pitchspeed << '\n';
-			// OutputDebugString(o.str().c_str());
 			ss << "cl_pitchspeed " << pitchspeed << '\n';
 		}
 
 		if (newyaw != oldyaw) {
 			double yawDifference = std::abs(GetYawDifference(oldyaw, newyaw));
 			double yawspeed = (yawDifference / frametime) / yawStateMultiplier;
-			// std::ostringstream o;
-			// o.setf(std::ios::fixed, std::ios::floatfield);
-			// o.precision(std::numeric_limits<double>::digits10);
-			// o << "oldyaw: " << oldyaw << " newyaw: " << newyaw << " yawDifference: " << yawDifference << " frametime: " << frametime << " yawStateMultiplier: " << yawStateMultiplier << " yawspeed: " << yawspeed << '\n';
-			// OutputDebugString(o.str().c_str());
 			ss << "cl_yawspeed " << yawspeed << '\n';
 		}
 

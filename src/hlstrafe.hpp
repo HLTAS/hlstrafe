@@ -121,6 +121,11 @@ namespace HLStrafe
 	*/
 	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const CurrentState& curState, ProcessedFrame& out);
 
+	/*
+		Applies the ground friction the same way as PM_Friction would, changing player.Velocity.
+	*/
+	void Friction(PlayerData& player, PositionType postype, const MovementVars& vars, TraceFunc traceFunc);
+
 	void Autojump(PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out);
 
 	/*
