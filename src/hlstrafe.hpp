@@ -8,6 +8,7 @@ namespace HLStrafe
 	struct PlayerData {
 		float Origin[3];
 		float Velocity[3];
+		float Basevelocity[3];
 		float Viewangles[3];
 
 		bool Ducking;
@@ -29,6 +30,8 @@ namespace HLStrafe
 		float Airaccelerate;
 		float Gravity;
 		float EntGravity; // Aka pmove->gravity.
+		float Stepsize;
+		float Bounce;
 		bool Bhopcap;
 	};
 
@@ -140,6 +143,8 @@ namespace HLStrafe
 	void Ducktap(const PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc);
 	void Autojump(PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out);
 
+	void Strafe(PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed);
+
 	/*
 		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
 		result in maximal speed gain. Postype != WATER.
@@ -181,6 +186,23 @@ namespace HLStrafe
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
 	void VectorFME(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const double a[2]);
+
+	/*
+		Computes the new velocity given unit acceleration vector and wishspeed,
+		stores the result in player.Velocity, computes the new position taking the world into consideration
+		and stores the result in player.Origin. Postype != WATER.
+
+		Struct requirements:
+		Velocity, Basevelocity, Origin;
+		Frametime, Accelerate or Airaccelerate, EntFriction, EntGravity, Gravity.
+	*/
+	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const double a[2], TraceFunc traceFunc);
+
+	/*
+		Helpers for the movement prediction, do exactly what PM_FlyMove and PM_ClipVelocity do.
+	*/
+	void FlyMove(PlayerData& player, const MovementVars& vars, PositionType postype, TraceFunc traceFunc);
+	int ClipVelocity(float velocity[3], const float normal[3], float overbounce);
 
 	/*
 		Finds the best yaw to use for the corresponding strafe type taking the anglemod compensation into account, then

@@ -46,7 +46,7 @@ namespace HLStrafe
 	inline void VecScale(const T from[], double scale, T to[])
 	{
 		for (std::size_t i = 0; i < size; ++i)
-			to[i] = from[i] * scale;
+			to[i] = static_cast<T>(from[i] * scale);
 	}
 
 	template<typename T, std::size_t size = 3>
@@ -94,6 +94,14 @@ namespace HLStrafe
 
 		double ls[] = { Length<T1, size>(a), Length<T2, size>(b) };
 		return (DotProduct<T1, T2, size>(a, b) / (ls[0] * ls[1]));
+	}
+
+	template <typename T1, typename T2>
+	inline void CrossProduct(const T1 a[3], const T1 b[3], typename std::common_type<T1, T2>::type out[3])
+	{
+		out[0] = a[1] * b[2] - a[2] * b[1];
+		out[1] = a[2] * b[0] - a[0] * b[2];
+		out[2] = a[0] * b[1] - a[1] * b[0];
 	}
 
 	inline double AngleModRad(double a)

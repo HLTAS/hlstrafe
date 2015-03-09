@@ -96,6 +96,218 @@ namespace HLStrafe
 		player.Velocity[1] += static_cast<float>(a[1] * tmp);
 	}
 
+	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const double a[2], TraceFunc traceFunc)
+	{
+		assert(postype != PositionType::WATER);
+
+		bool onground = (postype == PositionType::GROUND);
+		CheckVelocity(player, vars);
+
+		// AddCorrectGravity
+		float entGravity = vars.EntGravity;
+		if (entGravity == 0.0f)
+			entGravity = 1.0f;
+		player.Velocity[2] -= static_cast<float>(entGravity * vars.Gravity * 0.5 * vars.Frametime);
+		CheckVelocity(player, vars);
+
+		// Move
+		wishspeed = std::min(wishspeed, static_cast<double>(vars.Maxspeed));
+		if (onground)
+			player.Velocity[2] = 0;
+
+		// Accelerate
+		VectorFME(player, vars, postype, wishspeed, a);
+
+		// Move
+		VecAdd<float, float, 3>(player.Velocity, player.Basevelocity, player.Velocity);
+		if (onground) {
+			// WalkMove
+			auto spd = Length<float, 3>(player.Velocity);
+			if (spd < 1) {
+				VecScale<float, 3>(player.Velocity, 0, player.Velocity); // Clear velocity.
+			} else {
+				float dest[3];
+				VecCopy<float, 3>(player.Origin, dest);
+				dest[0] += player.Velocity[0] * vars.Frametime;
+				dest[1] += player.Velocity[1] * vars.Frametime;
+
+				auto tr = traceFunc(player.Origin, dest, (player.Ducking) ? HullType::DUCKED : HullType::NORMAL);
+				if (tr.Fraction == 1.0f) {
+					VecCopy<float, 3>(tr.EndPos, player.Origin);
+				} else {
+					// Figure out the end position when trying to walk up a step.
+					auto playerUp = PlayerData(player);
+					dest[2] += vars.Stepsize;
+					tr = traceFunc(playerUp.Origin, dest, (player.Ducking) ? HullType::DUCKED : HullType::NORMAL);
+					if (!tr.StartSolid && !tr.AllSolid)
+						VecCopy<float, 3>(tr.EndPos, playerUp.Origin);
+
+					FlyMove(playerUp, vars, postype, traceFunc);
+					VecCopy<float, 3>(playerUp.Origin, dest);
+					dest[2] -= vars.Stepsize;
+
+					tr = traceFunc(playerUp.Origin, dest, (player.Ducking) ? HullType::DUCKED : HullType::NORMAL);
+					if (!tr.StartSolid && !tr.AllSolid)
+						VecCopy<float, 3>(tr.EndPos, playerUp.Origin);
+
+					// Figure out the end position when _not_ trying to walk up a step.
+					auto playerDown = PlayerData(player);
+					FlyMove(playerDown, vars, postype, traceFunc);
+
+					// Take whichever move was the furthest.
+					auto downdist = (playerDown.Origin[0] - player.Origin[0]) * (playerDown.Origin[0] - player.Origin[0])
+						+ (playerDown.Origin[1] - player.Origin[1]) * (playerDown.Origin[1] - player.Origin[1]);
+					auto updist = (playerUp.Origin[0] - player.Origin[0]) * (playerUp.Origin[0] - player.Origin[0])
+						+ (playerUp.Origin[1] - player.Origin[1]) * (playerUp.Origin[1] - player.Origin[1]);
+
+					if ((tr.PlaneNormal[2] < 0.7) || (downdist > updist)) {
+						VecCopy<float, 3>(playerDown.Origin, player.Origin);
+						VecCopy<float, 3>(playerDown.Velocity, player.Velocity);
+					} else {
+						VecCopy<float, 3>(playerUp.Origin, player.Origin);
+						VecCopy<float, 2>(playerUp.Velocity, player.Velocity);
+						player.Velocity[2] = playerDown.Velocity[2];
+					}
+				}
+			}
+		} else {
+			// AirMove
+			FlyMove(player, vars, postype, traceFunc);
+		}
+
+		postype = GetPositionType(player, traceFunc);
+		CheckVelocity(player, vars);
+		if (postype != PositionType::GROUND && postype != PositionType::WATER) {
+			// FixupGravityVelocity
+			player.Velocity[2] -= static_cast<float>(entGravity * vars.Gravity * 0.5 * vars.Frametime);
+			CheckVelocity(player, vars);
+		}
+
+		return postype;
+	}
+
+	void FlyMove(PlayerData& player, const MovementVars& vars, PositionType postype, TraceFunc traceFunc)
+	{
+		const auto MAX_BUMPS = 4;
+		const auto MAX_CLIP_PLANES = 5;
+
+		float originalVelocity[3], savedVelocity[3];
+		VecCopy<float, 3>(player.Velocity, originalVelocity);
+		VecCopy<float, 3>(player.Velocity, savedVelocity);
+
+		auto timeLeft = vars.Frametime;
+		auto allFraction = 0.0f;
+		auto numPlanes = 0;
+		auto blockedState = 0;
+		float planes[MAX_CLIP_PLANES][3];
+
+		for (auto bumpCount = 0; bumpCount < MAX_BUMPS; ++bumpCount) {
+			if (IsZero<float, 3>(player.Velocity))
+				break;
+
+			float end[3];
+			for (size_t i = 0; i < 3; ++i)
+				end[i] = player.Origin[i] + timeLeft * player.Velocity[i];
+
+			auto tr = traceFunc(player.Origin, end, (player.Ducking) ? HullType::DUCKED : HullType::NORMAL);
+			allFraction += tr.Fraction;
+			if (tr.AllSolid) {
+				VecScale<float, 3>(player.Velocity, 0, player.Velocity);
+				blockedState = 4;
+				break;
+			}
+			if (tr.Fraction > 0) {
+				VecCopy<float, 3>(tr.EndPos, player.Origin);
+				VecCopy<float, 3>(player.Velocity, savedVelocity);
+				numPlanes = 0;
+			}
+			if (tr.Fraction == 1)
+				break;
+
+			if (tr.PlaneNormal[2] > 0.7)
+				blockedState |= 1;
+			else if (tr.PlaneNormal[2] == 0)
+				blockedState |= 2;
+
+			timeLeft -= timeLeft * tr.Fraction;
+
+			if (numPlanes >= MAX_CLIP_PLANES) {
+				VecScale<float, 3>(player.Velocity, 0, player.Velocity);
+				break;
+			}
+
+			VecCopy<float, 3>(tr.PlaneNormal, planes[numPlanes]);
+			numPlanes++;
+
+			if (postype != PositionType::GROUND || vars.EntFriction != 1) {
+				for (auto i = 0; i < numPlanes; ++i)
+					if (planes[i][2] > 0.7)
+						ClipVelocity(savedVelocity, planes[i], 1);
+					else
+						ClipVelocity(savedVelocity, planes[i], static_cast<float>(1.0 + vars.Bounce * (1 - vars.EntFriction)));
+
+				VecCopy<float, 3>(savedVelocity, player.Velocity);
+			} else {
+				int i = 0;
+				for (i = 0; i < numPlanes; ++i) {
+					VecCopy<float, 3>(savedVelocity, player.Velocity);
+					ClipVelocity(player.Velocity, planes[i], 1);
+
+					int j;
+					for (j = 0; j < numPlanes; ++j)
+						if (j != i)
+							if (DotProduct<float, float, 3>(player.Velocity, planes[j]) < 0)
+								break;
+
+					if (j == numPlanes)
+						break;
+				}
+
+				if (i == numPlanes) {
+					if (numPlanes != 2) {
+						VecScale<float, 3>(player.Velocity, 0, player.Velocity);
+						break;
+					}
+
+					float dir[3];
+					CrossProduct<float, float>(planes[0], planes[1], dir);
+					auto d = static_cast<float>(DotProduct<float, float, 3>(dir, player.Velocity));
+					VecScale<float, 3>(dir, d, player.Velocity);
+				}
+
+				if (DotProduct<float, float, 3>(player.Velocity, originalVelocity) <= 0) {
+					VecScale<float, 3>(player.Velocity, 0, player.Velocity);
+					break;
+				}
+			}
+		}
+
+		if (allFraction == 0)
+			VecScale<float, 3>(player.Velocity, 0, player.Velocity);
+	}
+
+	int ClipVelocity(float velocty[3], const float normal[3], float overbounce)
+	{
+		const auto STOP_EPSILON = 0.1;
+
+		auto backoff = static_cast<float>(DotProduct<float, float, 3>(velocty, normal) * overbounce);
+
+		for (size_t i = 0; i < 3; ++i) {
+			auto change = normal[i] * backoff;
+			velocty[i] -= change;
+
+			if (velocty[i] > -STOP_EPSILON && velocty[i] < STOP_EPSILON)
+				velocty[i] = 0;
+		}
+
+		if (normal[2] > 0)
+			return 1;
+		else if (normal[2] == 0)
+			return 2;
+		else
+			return 0;
+	}
+
 	inline double ButtonsPhi(HLTAS::Button button)
 	{
 		switch (button) {
@@ -536,6 +748,19 @@ namespace HLStrafe
 			if (curState.AutojumpsLeft)
 				curState.AutojumpsLeft--;
 		}
+	}
+
+	void Strafe(PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed)
+	{
+		double wishspeed = vars.Maxspeed;
+		if (reduceWishspeed)
+			wishspeed *= 0.333;
+
+		if (frame.Strafe) {
+
+		}
+
+
 	}
 
 	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, TraceFunc traceFunc)
