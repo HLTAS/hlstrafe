@@ -176,6 +176,7 @@ namespace HLStrafe
 		}
 
 		postype = GetPositionType(player, traceFunc);
+		VecSubtract<float, float, 3>(player.Velocity, player.Basevelocity, player.Velocity);
 		CheckVelocity(player, vars);
 		if (postype != PositionType::GROUND && postype != PositionType::WATER) {
 			// FixupGravityVelocity
