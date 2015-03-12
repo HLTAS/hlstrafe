@@ -780,8 +780,6 @@ namespace HLStrafe
 		if (reduceWishspeed)
 			wishspeed *= 0.333;
 
-		bool strafedRight = false;
-
 		bool strafed = true;
 		HLTAS::Button usedButton;
 		if (frame.Strafe) {
@@ -791,8 +789,6 @@ namespace HLStrafe
 					out.Yaw = static_cast<float>(SideStrafeMaxAccel(PlayerData(player), vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, out.Yaw * M_DEG2RAD, false) * M_RAD2DEG);
 				else if (frame.GetType() == HLTAS::StrafeType::MAXANGLE)
 					out.Yaw = static_cast<float>(SideStrafeMaxAngle(PlayerData(player), vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, out.Yaw * M_DEG2RAD, false) * M_RAD2DEG);
-
-				strafedRight = false;
 				break;
 
 			case HLTAS::StrafeDir::RIGHT:
@@ -800,8 +796,6 @@ namespace HLStrafe
 					out.Yaw = static_cast<float>(SideStrafeMaxAccel(PlayerData(player), vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, out.Yaw * M_DEG2RAD, true) * M_RAD2DEG);
 				else if (frame.GetType() == HLTAS::StrafeType::MAXANGLE)
 					out.Yaw = static_cast<float>(SideStrafeMaxAngle(PlayerData(player), vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, out.Yaw * M_DEG2RAD, true) * M_RAD2DEG);
-
-				strafedRight = true;
 				break;
 
 			case HLTAS::StrafeDir::BEST:
