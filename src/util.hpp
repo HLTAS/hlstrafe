@@ -68,6 +68,17 @@ namespace HLStrafe
 		return std::sqrt(squared);
 	}
 
+	template<typename T, std::size_t size = 3>
+	inline void Normalize(const T vec[], T out[])
+	{
+		auto len = Length<T, size>(vec);
+		if (len == 0)
+			return;
+
+		for (std::size_t i = 0; i < size; ++i)
+			out[i] = vec[i] / len;
+	}
+
 	template<typename T1, typename T2, std::size_t size = 3>
 	inline double DotProduct(const T1 a[], const T2 b[])
 	{
@@ -125,7 +136,7 @@ namespace HLStrafe
 		return a;
 	}
 
-	inline double Normalize(double a)
+	inline double NormalizeDeg(double a)
 	{
 		a = std::fmod(a, 360.0);
 		if (a >= 180.0)
