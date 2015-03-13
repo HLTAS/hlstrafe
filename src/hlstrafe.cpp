@@ -5,6 +5,8 @@
 #include "hlstrafe.hpp"
 #include "util.hpp"
 
+//#include "../../SPTLib/sptlib.hpp"
+
 namespace HLStrafe
 {
 	double MaxAccelTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed)
@@ -765,7 +767,7 @@ namespace HLStrafe
 	{
 		assert(postype != PositionType::WATER);
 
-		if (!frame.Autojump && !curState.AutojumpsLeft)
+		if ((frame.Lgagst || curState.LgagstsLeft) || (!frame.Autojump && !curState.AutojumpsLeft))
 			return;
 
 		if (postype == PositionType::GROUND && !curState.Jump && !out.Jump) {
@@ -775,7 +777,38 @@ namespace HLStrafe
 		}
 	}
 
-	void Strafe(PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, TraceFunc traceFunc)
+	void LgagstJump(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc)
+	{
+		assert(postype != PositionType::WATER);
+
+		if (!frame.Autojump || (!frame.Lgagst && !curState.LgagstsLeft)
+			|| postype != PositionType::GROUND || curState.Jump || out.Jump)
+			return;
+
+		// TODO: Implement a minimal speed check and setting somehow, probably as a frame like LgagstSpeed or something.
+
+		auto ground = PlayerData(player);
+		Friction(ground, postype, vars, traceFunc);
+		CheckVelocity(ground, vars);
+		auto out_temp = ProcessedFrame(out);
+		Strafe(ground, vars, postype, frame, out_temp, reduceWishspeed && !curState.LgagstFullMaxspeed, strafeButtons, useGivenButtons, false, traceFunc);
+
+		auto air = PlayerData(player);
+		out_temp = ProcessedFrame(out);
+		out_temp.Jump = true;
+		postype = PredictJump(air, postype, vars, curState, out_temp);
+		Strafe(air, vars, postype, frame, out_temp, reduceWishspeed && !curState.LgagstFullMaxspeed, strafeButtons, useGivenButtons, false, traceFunc);
+
+		auto l_gr = Length<float, 2>(ground.Velocity);
+		auto l_air = Length<float, 2>(air.Velocity);
+		if (l_air > l_gr) {
+			out.Jump = true;
+			if (curState.LgagstsLeft)
+				curState.LgagstsLeft--;
+		}
+	}
+
+	PositionType Strafe(PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, bool predictOrigin, TraceFunc traceFunc)
 	{
 		double wishspeed = vars.Maxspeed;
 		if (reduceWishspeed)
@@ -832,10 +865,10 @@ namespace HLStrafe
 
 		double a[2];
 		if (strafed) {
-			out.Forward = (usedButton == HLTAS::Button::FORWARD || usedButton == HLTAS::Button::FORWARD_LEFT || usedButton == HLTAS::Button::FORWARD_RIGHT);
-			out.Back = (usedButton == HLTAS::Button::BACK || usedButton == HLTAS::Button::BACK_LEFT || usedButton == HLTAS::Button::BACK_RIGHT);
-			out.Right = (usedButton == HLTAS::Button::RIGHT || usedButton == HLTAS::Button::FORWARD_RIGHT || usedButton == HLTAS::Button::BACK_RIGHT);
-			out.Left = (usedButton == HLTAS::Button::LEFT || usedButton == HLTAS::Button::FORWARD_LEFT || usedButton == HLTAS::Button::BACK_LEFT);
+			out.Forward = (usedButton == HLTAS::Button::FORWARD || usedButton == HLTAS::Button::FORWARD_LEFT  || usedButton == HLTAS::Button::FORWARD_RIGHT);
+			out.Back =    (usedButton == HLTAS::Button::BACK    || usedButton == HLTAS::Button::BACK_LEFT     || usedButton == HLTAS::Button::BACK_RIGHT);
+			out.Right =   (usedButton == HLTAS::Button::RIGHT   || usedButton == HLTAS::Button::FORWARD_RIGHT || usedButton == HLTAS::Button::BACK_RIGHT);
+			out.Left =    (usedButton == HLTAS::Button::LEFT    || usedButton == HLTAS::Button::FORWARD_LEFT  || usedButton == HLTAS::Button::BACK_LEFT);
 		} else {
 			auto forwardmove = out.Forward * out.Forwardspeed - out.Back * out.Backspeed;
 			auto sidemove = out.Right * out.Sidespeed - out.Left * out.Sidespeed;
@@ -843,9 +876,15 @@ namespace HLStrafe
 			auto sy = std::sin(out.Yaw * M_DEG2RAD);
 			double wishvel[] = { cy * forwardmove + sy * sidemove, sy * forwardmove - cy * sidemove }; // TODO: consider pitch & roll.
 			Normalize<double, 2>(wishvel, a);
+
+			if (!predictOrigin)
+				VectorFME(player, vars, postype, wishspeed, a);
 		}
 
-		postype = Move(player, vars, postype, wishspeed, traceFunc, !strafed, a);
+		if (predictOrigin)
+			postype = Move(player, vars, postype, wishspeed, traceFunc, !strafed, a);
+
+		return postype;
 	}
 
 	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, TraceFunc traceFunc)
@@ -883,7 +922,12 @@ namespace HLStrafe
 			curState.AutojumpsLeft = frame.GetAutojumpTimes();
 		if (frame.Ducktap)
 			curState.DucktapsLeft = frame.GetDucktapTimes();
+		if (frame.Lgagst) {
+			curState.LgagstFullMaxspeed = frame.GetLgagstFullMaxspeed();
+			curState.LgagstsLeft = frame.GetLgagstTimes();
+		}
 
+		//EngineMsg("p pr %f\t%f\t%f\t%f\t%f\t%f\n", player.Origin[0], player.Origin[1], player.Origin[2], player.Velocity[0], player.Velocity[1], player.Velocity[2]);
 		auto playerCopy = PlayerData(player); // Our copy that we will mess with.
 		auto postype = GetPositionType(playerCopy, traceFunc);
 		if (postype == PositionType::WATER)
@@ -907,13 +951,14 @@ namespace HLStrafe
 		if (out.Use && postype == PositionType::GROUND)
 			VecScale<float, 3>(playerCopy.Velocity, 0.3, playerCopy.Velocity);
 
-		// Lgagst-jump()
+		LgagstJump(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, curState, traceFunc);
 		Autojump(postype, frame, curState, out);
 		postype = PredictJump(playerCopy, postype, vars, curState, out);
 		Friction(playerCopy, postype, vars, traceFunc);
 		CheckVelocity(playerCopy, vars);
-		Strafe(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, traceFunc);
+		postype = Strafe(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, true, traceFunc);
 
+		//EngineMsg("p po %f\t%f\t%f\t%f\t%f\t%f\n", playerCopy.Origin[0], playerCopy.Origin[1], playerCopy.Origin[2], playerCopy.Velocity[0], playerCopy.Velocity[1], playerCopy.Velocity[2]);
 		curState.Jump = out.Jump;
 		curState.Duck = out.Duck;
 		return out;
