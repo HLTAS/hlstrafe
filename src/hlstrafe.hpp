@@ -196,7 +196,7 @@ namespace HLStrafe
 		Velocity, Basevelocity, Origin;
 		Frametime, Accelerate or Airaccelerate, EntFriction, EntGravity, Gravity.
 	*/
-	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const double a[2], TraceFunc traceFunc);
+	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, TraceFunc traceFunc, bool calcVelocity = false, const double a[2] = nullptr);
 
 	/*
 		Helpers for the movement prediction, do exactly what PM_FlyMove and PM_ClipVelocity do.
