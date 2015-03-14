@@ -5,7 +5,7 @@
 #include "hlstrafe.hpp"
 #include "util.hpp"
 
-//#include "../../SPTLib/sptlib.hpp"
+// #include "../../SPTLib/sptlib.hpp"
 
 namespace HLStrafe
 {
@@ -320,9 +320,9 @@ namespace HLStrafe
 		case HLTAS::Button::      FORWARD: return 0;
 		case HLTAS::Button:: FORWARD_LEFT: return M_PI / 4;
 		case HLTAS::Button::         LEFT: return M_PI / 2;
-		case HLTAS::Button::    BACK_LEFT: return 3 * M_PI / 2;
+		case HLTAS::Button::    BACK_LEFT: return 3 * M_PI / 4;
 		case HLTAS::Button::         BACK: return -M_PI;
-		case HLTAS::Button::   BACK_RIGHT: return -3 * M_PI / 2;
+		case HLTAS::Button::   BACK_RIGHT: return -3 * M_PI / 4;
 		case HLTAS::Button::        RIGHT: return -M_PI / 2;
 		case HLTAS::Button::FORWARD_RIGHT: return -M_PI / 4;
 		default: return 0;
@@ -723,7 +723,7 @@ namespace HLStrafe
 	{
 		assert(postype != PositionType::WATER);
 
-		if (!frame.Ducktap && !curState.DucktapsLeft)
+		if ((frame.Lgagst || curState.LgagstsLeft) || (!frame.Ducktap && !curState.DucktapsLeft))
 			return;
 		if (postype != PositionType::GROUND)
 			return;
@@ -777,15 +777,63 @@ namespace HLStrafe
 		}
 	}
 
+	void LgagstDucktap(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc)
+	{
+		assert(postype != PositionType::WATER);
+
+		if ((!frame.Lgagst && !curState.LgagstsLeft) || !curState.LgagstType // Lgagst not enabled or LgagstAutojump.
+			|| !frame.Strafe || frame.GetType() != HLTAS::StrafeType::MAXACCEL // Not maxaccel strafing.
+			|| postype != PositionType::GROUND || player.Ducking || player.InDuckAnimation // Not on ground, ducking or in duck animation.
+			|| out.Duck
+			|| Length<float, 2>(player.Velocity) < curState.LgagstMinSpeed)
+			return;
+
+		// Predict the next frame's origin.
+		auto playerCopy = PlayerData(player);
+		Friction(playerCopy, postype, vars, traceFunc);
+		auto out_temp = ProcessedFrame(out);
+		Strafe(playerCopy, vars, postype, frame, out_temp, reduceWishspeed, strafeButtons, useGivenButtons, true, traceFunc);
+
+		// Check if we can ducktap there.
+		float newOrigin[3];
+		VecCopy<float, 3>(playerCopy.Origin, newOrigin);
+		for (std::size_t i = 0; i < 3; ++i)
+			newOrigin[i] += (VEC_DUCK_HULL_MIN[i] - VEC_HULL_MIN[i]);
+		auto tr = traceFunc(newOrigin, newOrigin, HullType::NORMAL);
+		if (tr.StartSolid)
+			return;
+
+		// Do the actual lgagst check.
+		auto ground = PlayerData(playerCopy);
+		Friction(ground, postype, vars, traceFunc);
+		CheckVelocity(ground, vars);
+		out_temp = ProcessedFrame(out);
+		Strafe(ground, vars, postype, frame, out_temp, false, strafeButtons, useGivenButtons, false, traceFunc);
+
+		auto air = PlayerData(playerCopy);
+		out_temp = ProcessedFrame(out);
+		air.InDuckAnimation = true;
+		postype = PredictDuck(air, postype, vars, curState, out_temp, traceFunc);
+		Strafe(air, vars, postype, frame, out_temp, false, strafeButtons, useGivenButtons, false, traceFunc);
+
+		auto l_gr = Length<float, 2>(ground.Velocity);
+		auto l_air = Length<float, 2>(air.Velocity);
+		if (l_air > l_gr) {
+			out.Duck = true;
+			if (curState.LgagstsLeft)
+				curState.LgagstsLeft--;
+		}
+	}
+
 	void LgagstJump(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc)
 	{
 		assert(postype != PositionType::WATER);
 
-		if (!frame.Autojump || (!frame.Lgagst && !curState.LgagstsLeft)
-			|| postype != PositionType::GROUND || curState.Jump || out.Jump)
+		if ((!frame.Lgagst && !curState.LgagstsLeft) || curState.LgagstType // Lgagst not enabled or LgagstDucktap.
+			|| postype != PositionType::GROUND || curState.Jump || out.Jump // Cannot jump / already jumped.
+			|| !frame.Strafe || frame.GetType() != HLTAS::StrafeType::MAXACCEL // Not maxaccel strafing.
+			|| Length<float, 2>(player.Velocity) < curState.LgagstMinSpeed)
 			return;
-
-		// TODO: Implement a minimal speed check and setting somehow, probably as a frame like LgagstSpeed or something.
 
 		auto ground = PlayerData(player);
 		Friction(ground, postype, vars, traceFunc);
@@ -924,6 +972,7 @@ namespace HLStrafe
 			curState.DucktapsLeft = frame.GetDucktapTimes();
 		if (frame.Lgagst) {
 			curState.LgagstFullMaxspeed = frame.GetLgagstFullMaxspeed();
+			curState.LgagstType = frame.Ducktap;
 			curState.LgagstsLeft = frame.GetLgagstTimes();
 		}
 
@@ -941,7 +990,7 @@ namespace HLStrafe
 		// Jumpbug()
 		// Dbc()
 		// Dbg()
-		// Lgagst-ducktap()
+		LgagstDucktap(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, curState, traceFunc);
 		Ducktap(playerCopy, postype, frame, curState, out, traceFunc);
 		postype = PredictDuck(playerCopy, postype, vars, curState, out, traceFunc);
 
