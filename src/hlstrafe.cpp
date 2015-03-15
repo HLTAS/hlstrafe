@@ -5,7 +5,7 @@
 #include "hlstrafe.hpp"
 #include "util.hpp"
 
-// #include "../../SPTLib/sptlib.hpp"
+#include "../../SPTLib/sptlib.hpp"
 
 namespace HLStrafe
 {
@@ -1013,30 +1013,26 @@ namespace HLStrafe
 		return out;
 	}
 
-	double GetPitchDifference(float oldpitch, float newpitch)
+	double GetAngleDifference(float oldpitch, float newpitch)
 	{
 		return NormalizeDeg(static_cast<double>(newpitch) - oldpitch);
 	}
 
-	double GetYawDifference(float oldyaw, float newyaw)
-	{
-		return NormalizeDeg(static_cast<double>(newyaw) - oldyaw + M_U_DEG_HALF);
-	}
-
 	std::string GetAngleSpeedString(float oldpitch, float oldyaw, float newpitch, float newyaw, double pitchStateMultiplier, double yawStateMultiplier, float frametime)
 	{
+		EngineMsg("GetAngleSpeedString - oldyaw: %f newyaw: %f\n", oldyaw, newyaw);
 		std::ostringstream ss;
 		ss.setf(std::ios::fixed, std::ios::floatfield);
 		ss.precision(std::numeric_limits<double>::digits10);
 
 		if (newpitch != oldpitch) {
-			double pitchDifference = std::abs(GetPitchDifference(oldpitch, newpitch));
+			double pitchDifference = std::abs(GetAngleDifference(oldpitch, newpitch));
 			double pitchspeed = (pitchDifference / frametime) / pitchStateMultiplier;
 			ss << "cl_pitchspeed " << pitchspeed << '\n';
 		}
 
 		if (newyaw != oldyaw) {
-			double yawDifference = std::abs(GetYawDifference(oldyaw, newyaw));
+			double yawDifference = std::abs(GetAngleDifference(oldyaw, newyaw)) + M_U_DEG_HALF;
 			double yawspeed = (yawDifference / frametime) / yawStateMultiplier;
 			ss << "cl_yawspeed " << yawspeed << '\n';
 		}

@@ -114,10 +114,8 @@ namespace HLStrafe
 
 	/*
 		Returns the difference between two angles in a [-180; 180) range.
-		For Yaw takes the anglemod compensation into account.
 	*/
-	double GetPitchDifference(float oldpitch, float newpitch);
-	double GetYawDifference(float oldyaw, float newyaw);
+	double GetAngleDifference(float oldyaw, float newyaw);
 
 	/*
 		Returns the string to put into the command buffer to change the viewangles.
