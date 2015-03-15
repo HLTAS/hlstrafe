@@ -5,7 +5,7 @@
 #include "hlstrafe.hpp"
 #include "util.hpp"
 
-#include "../../SPTLib/sptlib.hpp"
+// #include "../../SPTLib/sptlib.hpp"
 
 namespace HLStrafe
 {
@@ -1020,7 +1020,6 @@ namespace HLStrafe
 
 	std::string GetAngleSpeedString(float oldpitch, float oldyaw, float newpitch, float newyaw, double pitchStateMultiplier, double yawStateMultiplier, float frametime)
 	{
-		EngineMsg("GetAngleSpeedString - oldyaw: %f newyaw: %f\n", oldyaw, newyaw);
 		std::ostringstream ss;
 		ss.setf(std::ios::fixed, std::ios::floatfield);
 		ss.precision(std::numeric_limits<double>::digits10);
