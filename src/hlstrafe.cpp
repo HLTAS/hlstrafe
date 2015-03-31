@@ -923,7 +923,12 @@ namespace HLStrafe
 			auto cy = std::cos(out.Yaw * M_DEG2RAD);
 			auto sy = std::sin(out.Yaw * M_DEG2RAD);
 			double wishvel[] = { cy * forwardmove + sy * sidemove, sy * forwardmove - cy * sidemove }; // TODO: consider pitch & roll.
-			Normalize<double, 2>(wishvel, a);
+			if (IsZero<double, 2>(wishvel)) {
+				a[0] = 0;
+				a[1] = 0;
+			} else {
+				Normalize<double, 2>(wishvel, a);
+			}
 
 			if (!predictOrigin)
 				VectorFME(player, vars, postype, wishspeed, a);
@@ -1013,9 +1018,9 @@ namespace HLStrafe
 		return out;
 	}
 
-	double GetAngleDifference(float oldpitch, float newpitch)
+	double GetAngleDifference(float oldang, float newang)
 	{
-		return NormalizeDeg(static_cast<double>(newpitch) - oldpitch);
+		return NormalizeDeg(static_cast<double>(newang) - oldang);
 	}
 
 	std::string GetAngleSpeedString(float oldpitch, float oldyaw, float newpitch, float newyaw, double pitchStateMultiplier, double yawStateMultiplier, float frametime)
