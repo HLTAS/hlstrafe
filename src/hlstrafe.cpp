@@ -98,7 +98,7 @@ namespace HLStrafe
 		player.Velocity[1] += static_cast<float>(a[1] * tmp);
 	}
 
-	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, TraceFunc traceFunc, bool calcVelocity, const double a[2])
+	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, TraceFunc traceFunc, bool calcVelocity, const double a[2], float fractions[4], float normalzs[4])
 	{
 		assert(postype != PositionType::WATER);
 
@@ -147,7 +147,7 @@ namespace HLStrafe
 					if (!tr.StartSolid && !tr.AllSolid)
 						VecCopy<float, 3>(tr.EndPos, playerUp.Origin);
 
-					FlyMove(playerUp, vars, postype, traceFunc);
+					FlyMove(playerUp, vars, postype, traceFunc, fractions, normalzs);
 					VecCopy<float, 3>(playerUp.Origin, dest);
 					dest[2] -= vars.Stepsize;
 
@@ -177,7 +177,7 @@ namespace HLStrafe
 			}
 		} else {
 			// AirMove
-			FlyMove(player, vars, postype, traceFunc);
+			FlyMove(player, vars, postype, traceFunc, fractions, normalzs);
 		}
 
 		postype = GetPositionType(player, traceFunc);
@@ -192,7 +192,7 @@ namespace HLStrafe
 		return postype;
 	}
 
-	void FlyMove(PlayerData& player, const MovementVars& vars, PositionType postype, TraceFunc traceFunc)
+	void FlyMove(PlayerData& player, const MovementVars& vars, PositionType postype, TraceFunc traceFunc, float fractions[4], float normalzs[4])
 	{
 		const auto MAX_BUMPS = 4;
 		const auto MAX_CLIP_PLANES = 5;
@@ -216,6 +216,11 @@ namespace HLStrafe
 				end[i] = player.Origin[i] + timeLeft * player.Velocity[i];
 
 			auto tr = traceFunc(player.Origin, end, (player.Ducking) ? HullType::DUCKED : HullType::NORMAL);
+			if (fractions)
+				fractions[bumpCount] = tr.Fraction;
+			if (normalzs)
+				normalzs[bumpCount] = tr.PlaneNormal[2];
+
 			allFraction += tr.Fraction;
 			if (tr.AllSolid) {
 				VecScale<float, 3>(player.Velocity, 0, player.Velocity);
@@ -777,6 +782,48 @@ namespace HLStrafe
 		}
 	}
 
+	void Dbc(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc)
+	{
+		assert(postype != PositionType::WATER);
+
+		if ((!frame.Dbc && !curState.DbcsLeft)
+			|| postype == PositionType::GROUND
+			|| out.Duck)
+			return;
+
+		// Default to not ceiling.
+		float normalzsUnducked[4] = { 0, 0, 0, 0 };
+		// tr.Fraction can never be this high.
+		float fractionsUnducked[4] = { 2, 2, 2, 2 };
+		float fractionsDucked[4] =   { 2, 2, 2, 2 };
+
+		auto playerCopy = PlayerData(player);
+		auto out_temp = ProcessedFrame(out);
+		Strafe(playerCopy, vars, postype, frame, out_temp, false, strafeButtons, useGivenButtons, true, traceFunc, fractionsUnducked, normalzsUnducked);
+
+		playerCopy = PlayerData(player);
+		out_temp = ProcessedFrame(out);
+		out_temp.Duck = true;
+		postype = PredictDuck(playerCopy, postype, vars, curState, out_temp, traceFunc);
+		Strafe(playerCopy, vars, postype, frame, out_temp, false, strafeButtons, useGivenButtons, true, traceFunc, fractionsDucked);
+
+		for (int i = 0; i < 4; ++i) {
+			if (fractionsDucked[i] > fractionsUnducked[i]) {
+				if (normalzsUnducked[i] == -1.0f && !curState.DbcCeilings) {
+					// EngineMsg("Not Dbcing because ceiling not set.\n");
+					break;
+				}
+				// EngineMsg("Dbc-ing\n");
+				out.Duck = true;
+				if (curState.DbcsLeft)
+					curState.DbcsLeft--;
+				break;
+			} else if (fractionsDucked[i] < fractionsUnducked[i]) {
+				break; // Don't dbc.
+			}
+		}
+	}
+
 	void LgagstDucktap(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc)
 	{
 		assert(postype != PositionType::WATER);
@@ -856,7 +903,7 @@ namespace HLStrafe
 		}
 	}
 
-	PositionType Strafe(PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, bool predictOrigin, TraceFunc traceFunc)
+	PositionType Strafe(PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, bool predictOrigin, TraceFunc traceFunc, float fractions[4], float normalzs[4])
 	{
 		double wishspeed = vars.Maxspeed;
 		if (reduceWishspeed)
@@ -935,7 +982,7 @@ namespace HLStrafe
 		}
 
 		if (predictOrigin)
-			postype = Move(player, vars, postype, wishspeed, traceFunc, !strafed, a);
+			postype = Move(player, vars, postype, wishspeed, traceFunc, !strafed, a, fractions, normalzs);
 
 		return postype;
 	}
@@ -975,6 +1022,10 @@ namespace HLStrafe
 			curState.AutojumpsLeft = frame.GetAutojumpTimes();
 		if (frame.Ducktap)
 			curState.DucktapsLeft = frame.GetDucktapTimes();
+		if (frame.Dbc) {
+			curState.DbcCeilings = frame.GetDbcCeilings();
+			curState.DbcsLeft = frame.GetDbcTimes();
+		}
 		if (frame.Lgagst) {
 			curState.LgagstFullMaxspeed = frame.GetLgagstFullMaxspeed();
 			curState.LgagstType = frame.Ducktap;
@@ -993,7 +1044,7 @@ namespace HLStrafe
 
 		// This order may change.
 		// Jumpbug()
-		// Dbc()
+		Dbc(playerCopy, vars, postype, frame, out, strafeButtons, useGivenButtons, curState, traceFunc);
 		// Dbg()
 		LgagstDucktap(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, curState, traceFunc);
 		Ducktap(playerCopy, postype, frame, curState, out, traceFunc);

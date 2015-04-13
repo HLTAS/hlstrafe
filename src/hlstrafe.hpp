@@ -65,6 +65,8 @@ namespace HLStrafe
 			Duck(false),
 			DucktapsLeft(0),
 			AutojumpsLeft(0),
+			DbcCeilings(false),
+			DbcsLeft(0),
 			LgagstFullMaxspeed(false),
 			LgagstType(false),
 			LgagstMinSpeed(30.0f),
@@ -75,6 +77,8 @@ namespace HLStrafe
 		bool Duck;
 		unsigned DucktapsLeft;
 		unsigned AutojumpsLeft;
+		bool DbcCeilings;
+		unsigned DbcsLeft;
 		bool LgagstFullMaxspeed;
 		bool LgagstType; // False if Autojump, true if Ducktap.
 		float LgagstMinSpeed;
@@ -156,9 +160,10 @@ namespace HLStrafe
 	void Ducktap(const PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc);
 	void Autojump(PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out);
 
+	void Dbc(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc);
 	void LgagstDucktap(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc);
 	void LgagstJump(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc);
-	PositionType Strafe(PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, bool predictOrigin, TraceFunc traceFunc);
+	PositionType Strafe(PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, bool predictOrigin, TraceFunc traceFunc, float fractions[4] = nullptr, float normalzs[4] = nullptr);
 
 	/*
 		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
@@ -211,12 +216,12 @@ namespace HLStrafe
 		Velocity, Basevelocity, Origin;
 		Frametime, Accelerate or Airaccelerate, EntFriction, EntGravity, Gravity.
 	*/
-	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, TraceFunc traceFunc, bool calcVelocity = false, const double a[2] = nullptr);
+	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, TraceFunc traceFunc, bool calcVelocity = false, const double a[2] = nullptr, float fractions[4] = nullptr, float normalzs[4] = nullptr);
 
 	/*
 		Helpers for the movement prediction, do exactly what PM_FlyMove and PM_ClipVelocity do.
 	*/
-	void FlyMove(PlayerData& player, const MovementVars& vars, PositionType postype, TraceFunc traceFunc);
+	void FlyMove(PlayerData& player, const MovementVars& vars, PositionType postype, TraceFunc traceFunc, float fractions[4] = nullptr, float normalzs[4] = nullptr);
 	int ClipVelocity(float velocity[3], const float normal[3], float overbounce);
 
 	/*
