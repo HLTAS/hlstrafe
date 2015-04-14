@@ -808,6 +808,10 @@ namespace HLStrafe
 		Strafe(playerCopy, vars, postype, frame, out_temp, false, strafeButtons, useGivenButtons, true, traceFunc, fractionsDucked);
 
 		for (int i = 0; i < 4; ++i) {
+			// Don't dbc if we encountered a ground plane first. Let dbg handle it.
+			if (normalzsUnducked[i] >= 0.7f)
+				break;
+
 			if (fractionsDucked[i] > fractionsUnducked[i]) {
 				if (normalzsUnducked[i] == -1.0f && !curState.DbcCeilings) {
 					// EngineMsg("Not Dbcing because ceiling not set.\n");
