@@ -67,6 +67,7 @@ namespace HLStrafe
 			AutojumpsLeft(0),
 			DbcCeilings(false),
 			DbcsLeft(0),
+			DbgsLeft(0),
 			LgagstFullMaxspeed(false),
 			LgagstType(false),
 			LgagstMinSpeed(30.0f),
@@ -79,6 +80,7 @@ namespace HLStrafe
 		unsigned AutojumpsLeft;
 		bool DbcCeilings;
 		unsigned DbcsLeft;
+		unsigned DbgsLeft;
 		bool LgagstFullMaxspeed;
 		bool LgagstType; // False if Autojump, true if Ducktap.
 		float LgagstMinSpeed;
@@ -161,6 +163,7 @@ namespace HLStrafe
 	void Autojump(PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out);
 
 	void Dbc(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc);
+	void Dbg(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc);
 	void LgagstDucktap(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc);
 	void LgagstJump(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc);
 	PositionType Strafe(PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, bool predictOrigin, TraceFunc traceFunc, float fractions[4] = nullptr, float normalzs[4] = nullptr);

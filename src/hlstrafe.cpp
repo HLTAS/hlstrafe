@@ -799,6 +799,15 @@ namespace HLStrafe
 
 		auto playerCopy = PlayerData(player);
 		auto out_temp = ProcessedFrame(out);
+		postype = PredictDuck(playerCopy, postype, vars, curState, out, traceFunc);
+		// If we cannot unduck, there's nothing we can change.
+		if (playerCopy.Ducking)
+			return;
+
+		// If we unducked and ended up on ground, then we don't care about this situation.
+		if (postype == PositionType::GROUND)
+			return;
+
 		Strafe(playerCopy, vars, postype, frame, out_temp, false, strafeButtons, useGivenButtons, true, traceFunc, fractionsUnducked, normalzsUnducked);
 
 		playerCopy = PlayerData(player);
@@ -824,6 +833,57 @@ namespace HLStrafe
 				break;
 			} else if (fractionsDucked[i] < fractionsUnducked[i]) {
 				break; // Don't dbc.
+			}
+		}
+	}
+
+	void Dbg(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc)
+	{
+		assert(postype != PositionType::WATER);
+
+		if ((!frame.Dbg && !curState.DbgsLeft)
+			|| postype == PositionType::GROUND
+			|| out.Duck)
+			return;
+
+		// Default to not ground.
+		float normalzsUnducked[4] = { 0, 0, 0, 0 };
+
+		auto playerCopy = PlayerData(player);
+		auto out_temp = ProcessedFrame(out);
+		postype = PredictDuck(playerCopy, postype, vars, curState, out_temp, traceFunc);
+		// If we cannot unduck, there's nothing we can change.
+		if (playerCopy.Ducking)
+			return;
+
+		// If we unducked and ended up on ground, keep ducking.
+		if (postype == PositionType::GROUND) {
+			// EngineMsg("Dbg [unduck]!\n");
+			out.Duck = true;
+			if (curState.DbgsLeft)
+				curState.DbgsLeft--;
+			return;
+		}
+
+		postype = Strafe(playerCopy, vars, postype, frame, out_temp, false, strafeButtons, useGivenButtons, true, traceFunc, nullptr, normalzsUnducked);
+		// If we moved and ended up on ground, dbg.
+		if (postype == PositionType::GROUND) {
+			// EngineMsg("Dbg!\n");
+			out.Duck = true;
+			if (curState.DbgsLeft)
+				curState.DbgsLeft--;
+			return;
+		}
+
+		// Otherwise, check if we hit a ground plane along the way.
+		// If so, dbg.
+		for (int i = 0; i < 4; ++i) {
+			if (normalzsUnducked[i] >= 0.7f) {
+				// EngineMsg("Dbg [normal]!\n");
+				out.Duck = true;
+				if (curState.DbgsLeft)
+					curState.DbgsLeft--;
+				return;
 			}
 		}
 	}
@@ -1030,6 +1090,8 @@ namespace HLStrafe
 			curState.DbcCeilings = frame.GetDbcCeilings();
 			curState.DbcsLeft = frame.GetDbcTimes();
 		}
+		if (frame.Dbg)
+			curState.DbgsLeft = frame.GetDbgTimes();
 		if (frame.Lgagst) {
 			curState.LgagstFullMaxspeed = frame.GetLgagstFullMaxspeed();
 			curState.LgagstType = frame.Ducktap;
@@ -1049,7 +1111,7 @@ namespace HLStrafe
 		// This order may change.
 		// Jumpbug()
 		Dbc(playerCopy, vars, postype, frame, out, strafeButtons, useGivenButtons, curState, traceFunc);
-		// Dbg()
+		Dbg(playerCopy, vars, postype, frame, out, strafeButtons, useGivenButtons, curState, traceFunc);
 		LgagstDucktap(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, curState, traceFunc);
 		Ducktap(playerCopy, postype, frame, curState, out, traceFunc);
 		postype = PredictDuck(playerCopy, postype, vars, curState, out, traceFunc);
