@@ -768,6 +768,43 @@ namespace HLStrafe
 		}
 	}
 
+	void Jumpbug(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc)
+	{
+		assert(postype != PositionType::WATER);
+
+		if ((!frame.Jumpbug && !curState.JumpbugsLeft) || postype == PositionType::GROUND)
+			return;
+
+		auto playerCopy = PlayerData(player);
+		auto outCopy = ProcessedFrame(out);
+		if (player.Ducking) {
+			outCopy.Duck = false;
+			postype = PredictDuck(playerCopy, postype, vars, curState, outCopy, traceFunc);
+
+			// If we're still ducking, then it is too late to jumpbug. Prepare for the inevitable.
+			if (playerCopy.Ducking)
+				return;
+
+			// If after unducking we end up on the ground, jumpbug now!
+			if (postype == PositionType::GROUND) {
+				if ((!out.Jump && !curState.Jump) || (out.Duck && curState.Duck)) {
+					out.Jump = true;
+					out.Duck = false;
+					if (curState.JumpbugsLeft)
+						curState.JumpbugsLeft--;
+				}
+				return;
+			}
+		}
+
+		postype = Strafe(playerCopy, vars, postype, frame, outCopy, false, strafeButtons, useGivenButtons, true, traceFunc);
+		if (postype == PositionType::GROUND) {
+			// Duck now so that in the next frame we can do the jumpbug.
+			out.Duck = true;
+			out.Jump = false;
+		}
+	}
+
 	void Autojump(PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out)
 	{
 		assert(postype != PositionType::WATER);
@@ -1109,7 +1146,7 @@ namespace HLStrafe
 		playerCopy.DuckTime = std::max(playerCopy.DuckTime - static_cast<int>(vars.Frametime * 1000), 0.f);
 
 		// This order may change.
-		// Jumpbug()
+		Jumpbug(playerCopy, vars, postype, frame, out, strafeButtons, useGivenButtons, curState, traceFunc);
 		Dbc(playerCopy, vars, postype, frame, out, strafeButtons, useGivenButtons, curState, traceFunc);
 		Dbg(playerCopy, vars, postype, frame, out, strafeButtons, useGivenButtons, curState, traceFunc);
 		LgagstDucktap(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, curState, traceFunc);

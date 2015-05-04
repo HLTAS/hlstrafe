@@ -63,6 +63,7 @@ namespace HLStrafe
 		CurrentState() :
 			Jump(false),
 			Duck(false),
+			JumpbugsLeft(0),
 			DucktapsLeft(0),
 			AutojumpsLeft(0),
 			DbcCeilings(false),
@@ -76,6 +77,7 @@ namespace HLStrafe
 
 		bool Jump;
 		bool Duck;
+		unsigned JumpbugsLeft;
 		unsigned DucktapsLeft;
 		unsigned AutojumpsLeft;
 		bool DbcCeilings;
@@ -159,6 +161,7 @@ namespace HLStrafe
 		Autofuncs generally do NOT release any pressed buttons with an exception of Ducktap
 		(for the sake of ducktapping while ducking the rest of the time).
 	*/
+	void Jumpbug(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc);
 	void Ducktap(const PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc);
 	void Autojump(PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out);
 
