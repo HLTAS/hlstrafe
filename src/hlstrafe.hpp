@@ -10,6 +10,7 @@ namespace HLStrafe
 		float Velocity[3];
 		float Basevelocity[3];
 		float Viewangles[3];
+		float OldSpeed; // Used only by constant speed strafing
 
 		bool Ducking;
 		bool InDuckAnimation;
@@ -182,6 +183,17 @@ namespace HLStrafe
 	double MaxAccelTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed);
 
 	/*
+		Returns the angle between velocity and wishdir in [0, Pi] that will
+		keep the speed constant as far as possible. Under certain conditions
+		the angle from MaxAccelTheta will be returned. Postype != WATER.
+
+		Struct requirements:
+			Velocity;
+			Frametime, Accelerate or Airaccelerate, EntFriction.
+	*/
+	double ConstSpeedTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed);
+
+	/*
 		Returns the angle in radians - [-Pi; Pi) - between velocity and wishdir that will
 		result in maximal speed gain into the given yaw - [-Pi; Pi). If velocity is zero, vel_yaw will
 		be used in place of velocity angle. Postype != WATER.
@@ -244,6 +256,8 @@ namespace HLStrafe
 	double SideStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
 		double vel_yaw, bool right);
 	double SideStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
+		double vel_yaw, bool right);
+	double SideStrafeConstSpeed(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
 		double vel_yaw, bool right);
 
 	/*
