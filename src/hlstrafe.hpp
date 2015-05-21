@@ -15,6 +15,7 @@ namespace HLStrafe
 		bool Ducking;
 		bool InDuckAnimation;
 		float DuckTime;
+		float StaminaTime;
 
 		bool HasLJModule;
 	};

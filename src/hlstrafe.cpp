@@ -736,22 +736,25 @@ namespace HLStrafe
 			return postype;
 
 		if (vars.Bhopcap) {
-			auto maxscaledspeed = 1.7f * vars.Maxspeed;
+			auto maxscaledspeed = 1.2f * vars.Maxspeed;
 			if (maxscaledspeed > 0) {
 				auto speed = Length<float, 3>(player.Velocity);
 				if (speed > maxscaledspeed)
-					VecScale<float, 3>(player.Velocity, (maxscaledspeed / speed) * 0.65, player.Velocity);
+					VecScale<float, 3>(player.Velocity, (maxscaledspeed / speed) * 0.8, player.Velocity);
 			}
 		}
 
+		uint32_t temp = 1151629635;
+		player.StaminaTime = *reinterpret_cast<float*>(&temp);
+
 		// TODO: duck-when autofuncs.
 		// We don't care about the vertical velocity after the jump prediction.
-		if (player.InDuckAnimation || player.Ducking) {
+		/*if (player.InDuckAnimation || player.Ducking) {
 			if (player.HasLJModule && out.Duck && player.DuckTime > 0 && Length<float, 3>(player.Velocity) > 50) {
 				player.Velocity[0] = static_cast<float>(std::cos(player.Viewangles[1] * M_DEG2RAD) * std::cos(player.Viewangles[0] * M_DEG2RAD) * 350 * 1.6);
 				player.Velocity[1] = static_cast<float>(std::sin(player.Viewangles[1] * M_DEG2RAD) * std::cos(player.Viewangles[0] * M_DEG2RAD) * 350 * 1.6);
 			}
-		}
+		}*/
 		CheckVelocity(player, vars);
 
 		return PositionType::AIR;
@@ -786,6 +789,12 @@ namespace HLStrafe
 		auto drop = control * friction * vars.Frametime;
 		auto newspeed = std::max(speed - drop, 0.f);
 		VecScale<float, 3>(player.Velocity, newspeed / speed, player.Velocity);
+
+		// WalkMove
+		VecScale<float, 2>(player.Velocity, (100 - player.StaminaTime / 1000 * 19) / 100, player.Velocity);
+		// Reduce this here since if we're calling Friction then we're predicting something
+		// and most likely will call Friction again and this needs to be correct.
+		player.StaminaTime = std::max(player.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
 	}
 
 	void Ducktap(const PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc)
@@ -1209,9 +1218,10 @@ namespace HLStrafe
 		if (postype == PositionType::WATER)
 			return out;
 
-		bool reduceWishspeed = playerCopy.Ducking;
+		bool reduceWishspeed = playerCopy.Ducking || playerCopy.InDuckAnimation;
 		// Same as in ReduceTimers().
 		playerCopy.DuckTime = std::max(playerCopy.DuckTime - static_cast<int>(vars.Frametime * 1000), 0.f);
+		playerCopy.StaminaTime = std::max(playerCopy.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
 
 		// This order may change.
 		Jumpbug(playerCopy, vars, postype, frame, out, strafeButtons, useGivenButtons, curState, traceFunc);
