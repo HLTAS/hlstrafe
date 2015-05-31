@@ -50,7 +50,7 @@ namespace HLStrafe
 			}
 		} else {
 			gamma1 *= vars.Accelerate;
-			double sqrdiff = player.OldSpeed * player.OldSpeed - speedsqr;
+			double sqrdiff = player.SpeedBeforeFriction * player.SpeedBeforeFriction - speedsqr;
 			double tmp = sqrdiff / gamma1;
 			if (tmp + gamma1 <= 2 * wishspeed) {
 				numer = tmp - gamma1;
@@ -475,7 +475,7 @@ namespace HLStrafe
 			DotProduct<float, float, 2>(velocities[0], velocities[0]),
 			DotProduct<float, float, 2>(velocities[1], velocities[1])
 		};
-		double oldspeedsqr = player.OldSpeed * player.OldSpeed;
+		double oldspeedsqr = player.SpeedBeforeFriction * player.SpeedBeforeFriction;
 
 		if (std::fabs(speedsqrs[0] - oldspeedsqr) <= std::fabs(speedsqrs[1] - oldspeedsqr)) {
 			VecCopy<float, 2>(velocities[0], player.Velocity);
@@ -762,7 +762,7 @@ namespace HLStrafe
 
 	void Friction(PlayerData& player, PositionType postype, const MovementVars& vars, TraceFunc traceFunc)
 	{
-		player.OldSpeed = Length<float, 2>(player.Velocity);
+		player.SpeedBeforeFriction = Length<float, 2>(player.Velocity);
 
 		if (postype != PositionType::GROUND)
 			return;

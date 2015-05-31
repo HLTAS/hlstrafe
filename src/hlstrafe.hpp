@@ -10,7 +10,6 @@ namespace HLStrafe
 		float Velocity[3];
 		float Basevelocity[3];
 		float Viewangles[3];
-		float OldSpeed; // Used only by constant speed strafing
 
 		bool Ducking;
 		bool InDuckAnimation;
@@ -18,6 +17,8 @@ namespace HLStrafe
 		float StaminaTime;
 
 		bool HasLJModule;
+
+		double SpeedBeforeFriction; // Internal.
 	};
 
 	struct MovementVars {
