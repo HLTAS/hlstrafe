@@ -1419,8 +1419,14 @@ namespace HLStrafe
 		}
 
 		if (newyaw != oldyaw) {
-			double yawDifference = std::abs(GetAngleDifference(oldyaw, newyaw)) + M_U_DEG_HALF;
-			double yawspeed = (yawDifference / frametime) / yawStateMultiplier;
+			auto angleDifference = GetAngleDifference(oldyaw, newyaw);
+
+			auto newyawIsNegative = (oldyaw + angleDifference < 0.0);
+			auto difIsNegative = (angleDifference < 0.0);
+			auto add = difIsNegative ? newyawIsNegative : true;
+
+			auto yawDifference = std::abs(angleDifference) + (add ? M_U_DEG_HALF : -M_U_DEG_HALF);
+			auto yawspeed = (yawDifference / frametime) / yawStateMultiplier;
 			ss << "cl_yawspeed " << yawspeed << '\n';
 		}
 
