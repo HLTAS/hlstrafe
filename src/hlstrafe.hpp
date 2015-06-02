@@ -218,6 +218,17 @@ namespace HLStrafe
 	double MaxAngleTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, bool& safeguard_yaw);
 
 	/*
+	Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
+	result in maximal decceleration. Sets safeguard_yaw to true if the yaw safeguard
+	is needed and to false otherwise. Postype != WATER.
+
+	Struct requirements:
+	Velocity;
+	Frametime, Accelerate or Airaccelerate, EntFriction.
+	*/
+	double MaxDeccelTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, bool& safeguard_yaw);
+
+	/*
 		Computes the new velocity given unit acceleration vector and wishspeed
 		and stores the result in player.Velocity. Postype != WATER.
 
@@ -259,6 +270,8 @@ namespace HLStrafe
 		double vel_yaw, bool right);
 	double SideStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
 		double vel_yaw, bool right);
+	double SideStrafeMaxDeccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
+		double vel_yaw, bool right, bool& strafed);
 	double SideStrafeConstSpeed(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
 		double vel_yaw, bool right);
 
@@ -277,6 +290,8 @@ namespace HLStrafe
 		double vel_yaw);
 	double BestStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
 		double vel_yaw);
+	double BestStrafeMaxDeccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
+		double vel_yaw, bool& strafed);
 
 	/*
 		Finds the best yaw to use for the corresponding strafe type taking the anglemod compensation into account, then
@@ -293,6 +308,8 @@ namespace HLStrafe
 		double vel_yaw, double yaw);
 	double YawStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
 		double vel_yaw, double yaw);
+	double YawStrafeMaxDeccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
+		double vel_yaw, double yaw, bool& strafed);
 
 	/*
 		Finds the best yaw to use for the given strafe type taking the anglemod compensation into account, then
