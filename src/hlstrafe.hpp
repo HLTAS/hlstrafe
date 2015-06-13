@@ -59,6 +59,15 @@ namespace HLStrafe
 		float Sidespeed;
 		float Backspeed;
 		float Upspeed;
+
+		bool NextFrameIs0ms;
+	};
+
+	enum class State0ms {
+		NOTHING = 0,
+		DUCKED,
+		UNDUCKED,
+		UNDUCKED_AND_DUCKED
 	};
 
 	struct CurrentState {
@@ -66,6 +75,7 @@ namespace HLStrafe
 			Jump(false),
 			Duck(false),
 			JumpbugsLeft(0),
+			Ducktap0ms(false),
 			DucktapsLeft(0),
 			AutojumpsLeft(0),
 			DbcCeilings(false),
@@ -74,12 +84,14 @@ namespace HLStrafe
 			LgagstFullMaxspeed(false),
 			LgagstType(false),
 			LgagstMinSpeed(30.0f),
-			LgagstsLeft(0)
+			LgagstsLeft(0),
+			PredictThis(State0ms::NOTHING)
 		{};
 
 		bool Jump;
 		bool Duck;
 		unsigned JumpbugsLeft;
+		bool Ducktap0ms;
 		unsigned DucktapsLeft;
 		unsigned AutojumpsLeft;
 		bool DbcCeilings;
@@ -89,6 +101,8 @@ namespace HLStrafe
 		bool LgagstType; // False if Autojump, true if Ducktap.
 		float LgagstMinSpeed;
 		unsigned LgagstsLeft;
+
+		State0ms PredictThis;
 	};
 
 	struct TraceResult {
@@ -123,6 +137,16 @@ namespace HLStrafe
 	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, TraceFunc traceFunc);
 
 	/*
+		Predicts the changes made in past 0ms frames (since those frames didn't run on the server yet).
+	*/
+	PositionType PredictPast0msFrames(PlayerData& player, const MovementVars& vars, PositionType postype, const ProcessedFrame& out, const CurrentState& curState, TraceFunc traceFunc);
+
+	/*
+		Checks if the next frame needs to be 0ms.
+	*/
+	void CheckIfNextFrameShouldBe0ms(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, PositionType postype, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, const CurrentState& curState, TraceFunc traceFunc);
+
+	/*
 		Returns the difference between two angles in a [-180; 180) range.
 	*/
 	double GetAngleDifference(float oldyaw, float newyaw);
@@ -145,7 +169,7 @@ namespace HLStrafe
 	/*
 		Changes the player data the same way as PM_Duck would, returns a new postype.
 	*/
-	PositionType PredictDuck(PlayerData& player, PositionType postype, const MovementVars& vars, const CurrentState& curState, const ProcessedFrame& out, TraceFunc traceFunc);
+	PositionType PredictDuck(PlayerData& player, const MovementVars& vars, PositionType postype, CurrentState& curState, const ProcessedFrame& out, TraceFunc traceFunc);
 
 	/*
 		Changes the player data the same way as PM_Jump would, returns a new postype.
