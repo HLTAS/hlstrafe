@@ -818,8 +818,8 @@ namespace HLStrafe
 		}
 	}
 
-	HLStrafe::PositionType PredictDuck(PlayerData& player, const MovementVars& vars, PositionType postype, CurrentState& curState, const ProcessedFrame& out, TraceFunc traceFunc)
-{
+	PositionType PredictDuck(PlayerData& player, const MovementVars& vars, PositionType postype, CurrentState& curState, const ProcessedFrame& out, TraceFunc traceFunc)
+	{
 		if (!out.Duck
 			&& !player.InDuckAnimation
 			&& !player.Ducking)
@@ -1343,7 +1343,7 @@ namespace HLStrafe
 		return postype;
 	}
 
-	HLStrafe::PositionType PredictPast0msFrames(PlayerData& player, const MovementVars& vars, PositionType postype, const ProcessedFrame& out, const CurrentState& curState, TraceFunc traceFunc)
+	PositionType PredictPast0msFrames(PlayerData& player, const MovementVars& vars, PositionType postype, const ProcessedFrame& out, const CurrentState& curState, TraceFunc traceFunc)
 	{
 		auto out_copy = ProcessedFrame{ out };
 		auto curState_copy = CurrentState{ curState };
