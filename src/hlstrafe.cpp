@@ -1433,7 +1433,7 @@ namespace HLStrafe
 
 			auto newyawIsNegative = (oldyaw + angleDifference < 0.0);
 			auto difIsNegative = (angleDifference < 0.0);
-			auto add = difIsNegative ? newyawIsNegative : true;
+			auto add = (difIsNegative && newyawIsNegative) || (!difIsNegative && !newyawIsNegative);
 
 			auto yawDifference = std::abs(angleDifference) + (add ? M_U_DEG_HALF : -M_U_DEG_HALF);
 			auto yawspeed = (yawDifference / frametime) / yawStateMultiplier;
