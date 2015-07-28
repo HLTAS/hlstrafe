@@ -671,6 +671,36 @@ namespace HLStrafe
 		}
 	}
 
+	double BestStrafeConstSpeed(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
+		double vel_yaw)
+	{
+		assert(postype != PositionType::WATER);
+
+		float temp_vel[2], orig_vel[2];
+		double yaws[2];
+		HLTAS::Button buttons[2];
+		VecCopy<float, 2>(player.Velocity, orig_vel);
+		yaws[0] = SideStrafeConstSpeed(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, buttons[0], vel_yaw, false);
+		VecCopy<float, 2>(player.Velocity, temp_vel);
+		VecCopy<float, 2>(orig_vel, player.Velocity);
+		yaws[1] = SideStrafeConstSpeed(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, buttons[1], vel_yaw, true);
+
+		double speedsqrs[2] = {
+			DotProduct<float, float, 2>(temp_vel, temp_vel),
+			DotProduct<float, float, 2>(player.Velocity, player.Velocity)
+		};
+		double oldspeedsqr = DotProduct<float, float, 2>(orig_vel, orig_vel);
+
+		if (std::fabs(oldspeedsqr - speedsqrs[0]) <= std::fabs(oldspeedsqr - speedsqrs[1])) {
+			VecCopy<float, 2>(temp_vel, player.Velocity);
+			usedButton = buttons[0];
+			return yaws[0];
+		} else {
+			usedButton = buttons[1];
+			return yaws[1];
+		}
+	}
+
 	double YawStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
 		double vel_yaw, double yaw)
 	{
@@ -762,6 +792,31 @@ namespace HLStrafe
 		}
 	}
 
+	double YawStrafeConstSpeed(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
+		double vel_yaw, double yaw)
+	{
+		assert(postype != PositionType::WATER);
+
+		double oldspeedsqr = DotProduct<float, float, 2>(player.Velocity, player.Velocity);
+		double theta = ConstSpeedTheta(player, vars, postype, wishspeed);
+		float velocities[2][2];
+		double yaws[2];
+		SideStrafeGeneral(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, theta, (NormalizeRad(yaw - vel_yaw) < 0), false, velocities, yaws);
+
+		double speedsqrs[2] = {
+			DotProduct<float, float, 2>(velocities[0], velocities[0]),
+			DotProduct<float, float, 2>(velocities[1], velocities[1])
+		};
+
+		if (std::fabs(oldspeedsqr - speedsqrs[0]) <= std::fabs(oldspeedsqr - speedsqrs[1])) {
+			VecCopy<float, 2>(velocities[0], player.Velocity);
+			return yaws[0];
+		} else {
+			VecCopy<float, 2>(velocities[1], player.Velocity);
+			return yaws[1];
+		}
+	}
+
 	double PointStrafe(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
 		double vel_yaw, HLTAS::StrafeType type, double point[2], bool& strafed)
 	{
@@ -783,6 +838,7 @@ namespace HLStrafe
 		case HLTAS::StrafeType::MAXACCEL: return YawStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, yaw);
 		case HLTAS::StrafeType::MAXANGLE: return YawStrafeMaxAngle(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, yaw);
 		case HLTAS::StrafeType::MAXDECCEL: return YawStrafeMaxDeccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, yaw, strafed);
+		case HLTAS::StrafeType::CONSTSPEED: return YawStrafeConstSpeed(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, yaw);
 		// TODO add the rest of the calls when the functions are done.
 		}
 	}
@@ -1263,6 +1319,8 @@ namespace HLStrafe
 					out.Yaw = static_cast<float>(BestStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, out.Yaw * M_DEG2RAD) * M_RAD2DEG);
 				else if (frame.GetType() == HLTAS::StrafeType::MAXANGLE)
 					out.Yaw = static_cast<float>(BestStrafeMaxAngle(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, out.Yaw * M_DEG2RAD) * M_RAD2DEG);
+				else if (frame.GetType() == HLTAS::StrafeType::CONSTSPEED)
+					out.Yaw = static_cast<float>(BestStrafeConstSpeed(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, out.Yaw * M_DEG2RAD) * M_RAD2DEG);
 				else if (frame.GetType() == HLTAS::StrafeType::MAXDECCEL) {
 					auto yaw = static_cast<float>(BestStrafeMaxDeccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, out.Yaw * M_DEG2RAD, strafed) * M_RAD2DEG);
 					if (strafed)
@@ -1275,6 +1333,8 @@ namespace HLStrafe
 					out.Yaw = static_cast<float>(YawStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, out.Yaw * M_DEG2RAD, frame.GetYaw() * M_DEG2RAD) * M_RAD2DEG);
 				else if (frame.GetType() == HLTAS::StrafeType::MAXANGLE)
 					out.Yaw = static_cast<float>(YawStrafeMaxAngle(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, out.Yaw * M_DEG2RAD, frame.GetYaw() * M_DEG2RAD) * M_RAD2DEG);
+				else if (frame.GetType() == HLTAS::StrafeType::CONSTSPEED)
+					out.Yaw = static_cast<float>(YawStrafeConstSpeed(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, out.Yaw * M_DEG2RAD, frame.GetYaw() * M_DEG2RAD) * M_RAD2DEG);
 				else if (frame.GetType() == HLTAS::StrafeType::MAXDECCEL) {
 					auto yaw = static_cast<float>(YawStrafeMaxDeccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, out.Yaw * M_DEG2RAD, frame.GetYaw() * M_DEG2RAD, strafed) * M_RAD2DEG);
 					if (strafed)
