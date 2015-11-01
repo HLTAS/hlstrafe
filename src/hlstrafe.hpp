@@ -81,6 +81,7 @@ namespace HLStrafe
 			DbcCeilings(false),
 			DbcsLeft(0),
 			DbgsLeft(0),
+			DwjsLeft(0),
 			LgagstFullMaxspeed(false),
 			LgagstType(false),
 			LgagstMinSpeed(30.0f),
@@ -97,6 +98,7 @@ namespace HLStrafe
 		bool DbcCeilings;
 		unsigned DbcsLeft;
 		unsigned DbgsLeft;
+		unsigned DwjsLeft;
 		bool LgagstFullMaxspeed;
 		bool LgagstType; // False if Autojump, true if Ducktap.
 		float LgagstMinSpeed;
@@ -175,7 +177,7 @@ namespace HLStrafe
 		Changes the player data the same way as PM_Jump would, returns a new postype.
 		Changes the processed frame in case of some duck-when autofuncs.
 	*/
-	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const CurrentState& curState, ProcessedFrame& out);
+	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc, bool decreaseDwjTimes = false);
 
 	/*
 		Applies the ground friction the same way as PM_Friction would, changing player.Velocity.

@@ -934,7 +934,7 @@ namespace HLStrafe
 		return postype;
 	}
 
-	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const CurrentState& curState, ProcessedFrame& out)
+	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc, bool decreaseDwjTimes)
 	{
 		assert(postype != PositionType::WATER);
 
@@ -942,6 +942,25 @@ namespace HLStrafe
 			|| curState.Jump // Jump was already down.
 			|| postype != PositionType::GROUND) // Not on ground.
 			return postype;
+
+		// Check a lot of stuff for DWJ to make sure we don't "spend" DWJ when we are already ducking.
+		if ((frame.Dwj || curState.DwjsLeft)
+			&& !curState.Duck && !out.Duck
+			&& !player.InDuckAnimation && !player.Ducking
+			&& player.DuckTime == 0.0f) {
+			auto out_backup = ProcessedFrame(out);
+			auto curState_backup = CurrentState(curState);
+
+			out.Duck = true;
+			postype = PredictDuck(player, vars, postype, curState, out, traceFunc);
+			if (postype != PositionType::GROUND) {
+				out = out_backup;
+				curState = curState_backup;
+			} else {
+				if (decreaseDwjTimes && curState.DwjsLeft)
+					curState.DwjsLeft--;
+			}
+		}
 
 		if (vars.Bhopcap) {
 			auto maxscaledspeed = 1.7f * vars.Maxspeed;
@@ -952,17 +971,16 @@ namespace HLStrafe
 			}
 		}
 
-		// TODO: duck-when autofuncs.
 		// We don't care about the vertical velocity after the jump prediction.
 		// Except when we need to predict a 0ms frame, then we need the check in Move to correctly
 		// report that we are not onground (since we just jumped and our vertical speed is bigger than 180).
-		player.Velocity[2] = static_cast<float>(std::sqrt(2 * 800 * 45.0));
 		if (player.InDuckAnimation || player.Ducking) {
 			if (player.HasLJModule && out.Duck && player.DuckTime > 0 && Length<float, 3>(player.Velocity) > 50) {
 				player.Velocity[0] = static_cast<float>(std::cos(player.Viewangles[1] * M_DEG2RAD) * std::cos(player.Viewangles[0] * M_DEG2RAD) * 350 * 1.6);
 				player.Velocity[1] = static_cast<float>(std::sin(player.Viewangles[1] * M_DEG2RAD) * std::cos(player.Viewangles[0] * M_DEG2RAD) * 350 * 1.6);
 			}
 		}
+		player.Velocity[2] = static_cast<float>(std::sqrt(2 * 800 * 45.0));
 		CheckVelocity(player, vars);
 
 		return PositionType::AIR;
@@ -1279,8 +1297,9 @@ namespace HLStrafe
 		auto air = PlayerData(player);
 		out_temp = ProcessedFrame(out);
 		out_temp.Jump = true;
-		postype = PredictJump(air, postype, vars, curState, out_temp);
-		Strafe(air, vars, postype, frame, out_temp, reduceWishspeed && !curState.LgagstFullMaxspeed, strafeButtons, useGivenButtons, false, traceFunc);
+		auto curState_temp = CurrentState(curState);
+		postype = PredictJump(air, postype, vars, frame, curState_temp, out_temp, traceFunc);
+		Strafe(air, vars, postype, frame, out_temp, reduceWishspeed && !curState_temp.LgagstFullMaxspeed, strafeButtons, useGivenButtons, false, traceFunc);
 
 		auto l_gr = Length<float, 2>(ground.Velocity);
 		auto l_air = Length<float, 2>(air.Velocity);
@@ -1501,6 +1520,8 @@ namespace HLStrafe
 		}
 		if (frame.Dbg)
 			curState.DbgsLeft = frame.GetDbgTimes();
+		if (frame.Dwj)
+			curState.DwjsLeft = frame.GetDwjTimes();
 		if (frame.Lgagst) {
 			curState.LgagstFullMaxspeed = frame.GetLgagstFullMaxspeed();
 			curState.LgagstType = frame.Ducktap;
@@ -1539,7 +1560,7 @@ namespace HLStrafe
 
 		LgagstJump(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, curState, traceFunc);
 		Autojump(postype, frame, curState, out);
-		postype = PredictJump(playerCopy, postype, vars, curState, out);
+		postype = PredictJump(playerCopy, postype, vars, frame, curState, out, traceFunc, true);
 		Friction(playerCopy, postype, vars, traceFunc);
 		CheckVelocity(playerCopy, vars);
 		postype = Strafe(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, true, traceFunc);
