@@ -1452,8 +1452,11 @@ namespace HLStrafe
 			|| player.InDuckAnimation)
 			return;
 
-		if (frame.Lgagst) {
+		if (frame.Lgagst || curState.LgagstsLeft) {
 			// Do the lgagst check. Check current player state because our ducktap is going to be 0ms.
+			if (Length<float, 2>(player.Velocity) < curState.LgagstMinSpeed)
+				return;
+
 			auto ground = PlayerData(player);
 			Friction(ground, postype, vars, traceFunc);
 			CheckVelocity(ground, vars);
