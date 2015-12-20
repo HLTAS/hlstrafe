@@ -19,6 +19,9 @@ namespace HLStrafe
 		if (accelspeed <= 0.0)
 			return M_PI;
 
+		if (IsZero<float, 2>(player.Velocity))
+			return 0.0;
+
 		double wishspeed_capped = onground ? wishspeed : 30;
 		double tmp = wishspeed_capped - accelspeed;
 		if (tmp <= 0.0)
