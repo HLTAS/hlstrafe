@@ -2,8 +2,11 @@ cmake_minimum_required (VERSION 3.1)
 project (hlstrafe)
 
 set (CMAKE_CXX_STANDARD 11)
+include_directories (include)
 
-include_directories (${BOOST_ROOT})
-include_directories (hltas/src)
+add_subdirectory(src)
 
-add_library (hlstrafe src/hlstrafe.cpp)
+if (BUILD_TESTING)
+	enable_testing()
+	add_subdirectory(test)
+endif ()
