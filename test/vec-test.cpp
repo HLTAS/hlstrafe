@@ -4,8 +4,6 @@
 #include <cmath>
 #include "vec.hpp"
 
-static constexpr const double eps = 1e-8;
-
 TEST_CASE( "vec2d tests", "[vec]" ) {
 	vec2d v(1, 2);
 
@@ -14,17 +12,17 @@ TEST_CASE( "vec2d tests", "[vec]" ) {
 	REQUIRE( v == vec2d(1, 2) );
 	REQUIRE( v != vec2d(3, 2) );
 
-	REQUIRE( !v.is_zero() );
+	REQUIRE_FALSE( v.is_zero() );
 	REQUIRE( vec2d(0, 0).is_zero() );
 
 	REQUIRE( v.len_sq() == 5.0 );
-	REQUIRE( std::abs(v.len() - std::sqrt(5.0)) < eps );
+	REQUIRE( v.len() == Approx(std::sqrt(5.0)) );
 
 	REQUIRE( v + vec2d(2, 3) == vec2d(3, 5) );
 	REQUIRE( v - vec2d(2, 3) == vec2d(-1, -1) );
 	REQUIRE( v * 2 == vec2d(2, 4) );
 	REQUIRE( 2 * v == vec2d(2, 4) );
-	REQUIRE( (v / 2 - vec2d(0.5, 1)).len_sq() < eps );
+	REQUIRE( (v / 2 - vec2d(0.5, 1)).len_sq() == Approx(0.0) );
 	REQUIRE( -v == vec2d(-1, -2) );
 
 	v += vec2d(2, 3);
@@ -42,8 +40,8 @@ TEST_CASE( "vec2d tests", "[vec]" ) {
 	REQUIRE( v.dot(-v) == -5.0 );
 
 	auto length = v.len();
-	REQUIRE( std::abs(v.normalize() - length) < eps );
-	REQUIRE( (v - vec2d(std::sqrt(1/5.0), std::sqrt(4/5.0))).len_sq() < eps );
+	REQUIRE( v.normalize() == length );
+	REQUIRE( (v - vec2d(std::sqrt(1/5.0), std::sqrt(4/5.0))).len_sq() == Approx(0.0) );
 }
 
 TEST_CASE( "vec tests", "[vec]" ) {
@@ -55,17 +53,17 @@ TEST_CASE( "vec tests", "[vec]" ) {
 	REQUIRE( v == vec(1, 2, 3) );
 	REQUIRE( v != vec(3, 2, 1) );
 
-	REQUIRE( !v.is_zero() );
+	REQUIRE_FALSE( v.is_zero() );
 	REQUIRE( vec(0, 0, 0).is_zero() );
 
 	REQUIRE( v.len_sq() == 14.0 );
-	REQUIRE( std::abs(v.len() - std::sqrt(14.0)) < eps );
+	REQUIRE( v.len() == Approx(std::sqrt(14.0)) );
 
 	REQUIRE( v + vec(2, 3, 4) == vec(3, 5, 7) );
 	REQUIRE( v - vec(2, 3, 4) == vec(-1, -1, -1) );
 	REQUIRE( v * 2 == vec(2, 4, 6) );
 	REQUIRE( 2 * v == vec(2, 4, 6) );
-	REQUIRE( (v / 2 - vec(0.5, 1, 1.5)).len_sq() < eps );
+	REQUIRE( (v / 2 - vec(0.5, 1, 1.5)).len_sq() == Approx(0.0) );
 	REQUIRE( -v == vec(-1, -2, -3) );
 
 	v += vec(2, 3, 4);
@@ -87,6 +85,6 @@ TEST_CASE( "vec tests", "[vec]" ) {
 	REQUIRE( vec(0, 0, 1).as_2d().is_zero() );
 
 	auto length = v.len();
-	REQUIRE( std::abs(v.normalize() - length) < eps );
-	REQUIRE( (v - vec(std::sqrt(1/14.0), std::sqrt(2/7.0), std::sqrt(9/14.0))).len_sq() < eps );
+	REQUIRE( v.normalize() == length );
+	REQUIRE( (v - vec(std::sqrt(1/14.0), std::sqrt(2/7.0), std::sqrt(9/14.0))).len_sq() == Approx(0.0) );
 }
