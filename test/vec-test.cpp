@@ -2,13 +2,19 @@
 #include "catch.hpp"
 
 #include <cmath>
+
 #include "vec.hpp"
+
+using namespace HLStrafe;
 
 TEST_CASE( "vec2d tests", "[vec]" ) {
 	vec2d v(1, 2);
 
 	REQUIRE( v.x == 1.0 );
 	REQUIRE( v.y == 2.0 );
+	REQUIRE( v[0] == 1.0 );
+	REQUIRE( v[1] == 2.0 );
+
 	REQUIRE( v == vec2d(1, 2) );
 	REQUIRE( v != vec2d(3, 2) );
 
@@ -50,6 +56,10 @@ TEST_CASE( "vec tests", "[vec]" ) {
 	REQUIRE( v.x == 1.0 );
 	REQUIRE( v.y == 2.0 );
 	REQUIRE( v.z == 3.0 );
+	REQUIRE( v[0] == 1.0 );
+	REQUIRE( v[1] == 2.0 );
+	REQUIRE( v[2] == 3.0 );
+
 	REQUIRE( v == vec(1, 2, 3) );
 	REQUIRE( v != vec(3, 2, 1) );
 

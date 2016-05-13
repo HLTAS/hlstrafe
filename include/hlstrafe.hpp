@@ -2,13 +2,14 @@
 #include <functional>
 
 #include "hltas.hpp"
+#include "vec.hpp"
 
 namespace HLStrafe
 {
 	struct PlayerData {
-		float Origin[3];
-		float Velocity[3];
-		float Basevelocity[3];
+		vec Origin;
+		vec Velocity;
+		vec Basevelocity;
 		float Viewangles[3];
 
 		bool Ducking;
@@ -111,8 +112,8 @@ namespace HLStrafe
 		bool AllSolid;
 		bool StartSolid;
 		float Fraction;
-		float EndPos[3];
-		float PlaneNormal[3];
+		vec EndPos;
+		vec PlaneNormal;
 		int Entity;
 	};
 
@@ -129,7 +130,7 @@ namespace HLStrafe
 		POINT = 2
 	};
 
-	typedef std::function<TraceResult(const float[3], const float[3], HLStrafe::HullType)> TraceFunc;
+	using TraceFunc = std::function<TraceResult(const vec&, const vec&, HLStrafe::HullType)>;
 
 	/*
 		All-in-one function that does everything and returns the buttons,
@@ -139,219 +140,361 @@ namespace HLStrafe
 	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, TraceFunc traceFunc);
 
 	/*
-		Predicts the changes made in past 0ms frames (since those frames didn't run on the server yet).
-	*/
-	PositionType PredictPast0msFrames(PlayerData& player, const MovementVars& vars, PositionType postype, const ProcessedFrame& out, const CurrentState& curState, TraceFunc traceFunc);
-
-	/*
-		Checks if the next frame needs to be 0ms.
-	*/
-	void CheckIfNextFrameShouldBe0ms(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, PositionType postype, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, const CurrentState& curState, TraceFunc traceFunc);
-
-	/*
-		Returns the difference between two angles in a [-180; 180) range.
-	*/
-	double GetAngleDifference(float oldyaw, float newyaw);
-
-	/*
 		Returns the string to put into the command buffer to change the viewangles.
 	*/
 	std::string GetAngleSpeedString(float oldpitch, float oldyaw, float newpitch, float newyaw, double pitchStateMultiplier, double yawStateMultiplier, float frametime);
 
-	/*
-		Figures out the player's position type and, if necessary, updates player.Origin and curState.
-	*/
-	PositionType GetPositionType(PlayerData& player, TraceFunc traceFunc);
+	namespace autofuncs
+	{
+		/*
+			Autofuncs. They modify stuff in curState and also buttons from the ProcessedFrame.
+			Autofuncs generally do NOT release any pressed buttons with an exception of Ducktap
+			(for the sake of ducktapping while ducking the rest of the time).
+		*/
+		void Jumpbug(
+			const PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			const HLTAS::Frame& frame,
+			ProcessedFrame& out,
+			const HLTAS::StrafeButtons& strafeButtons,
+			bool useGivenButtons,
+			CurrentState& curState,
+			TraceFunc traceFunc);
 
-	/*
-		Limits the velocity components to maxvelocity.
-	*/
-	void CheckVelocity(PlayerData& player, const MovementVars& vars);
+		void Ducktap(
+			const PlayerData& player,
+			PositionType postype,
+			const HLTAS::Frame& frame,
+			CurrentState& curState,
+			ProcessedFrame& out,
+			TraceFunc traceFunc);
 
-	/*
-		Changes the player data the same way as PM_Duck would, returns a new postype.
-	*/
-	PositionType PredictDuck(PlayerData& player, const MovementVars& vars, PositionType postype, CurrentState& curState, const ProcessedFrame& out, TraceFunc traceFunc);
+		void Autojump(PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out);
 
-	/*
-		Changes the player data the same way as PM_Jump would, returns a new postype.
-		Changes the processed frame in case of some duck-when autofuncs.
-	*/
-	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc, bool decreaseDwjTimes = false);
+		void Dbc(
+			const PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			const HLTAS::Frame& frame,
+			ProcessedFrame& out,
+			const HLTAS::StrafeButtons& strafeButtons,
+			bool useGivenButtons,
+			CurrentState& curState,
+			TraceFunc traceFunc);
 
-	/*
-		Applies the ground friction the same way as PM_Friction would, changing player.Velocity.
-	*/
-	void Friction(PlayerData& player, PositionType postype, const MovementVars& vars, TraceFunc traceFunc);
+		void Dbg(
+			const PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			const HLTAS::Frame& frame,
+			ProcessedFrame& out,
+			const HLTAS::StrafeButtons& strafeButtons,
+			bool useGivenButtons,
+			CurrentState& curState,
+			TraceFunc traceFunc);
 
-	/*
-		Autofuncs. They modify stuff in curState and also buttons from the ProcessedFrame.
-		Autofuncs generally do NOT release any pressed buttons with an exception of Ducktap
-		(for the sake of ducktapping while ducking the rest of the time).
-	*/
-	void Jumpbug(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc);
-	void Ducktap(const PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc);
-	void Autojump(PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out);
+		void LgagstDucktap(
+			const PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			const HLTAS::Frame& frame,
+			ProcessedFrame& out,
+			bool reduceWishspeed,
+			const HLTAS::StrafeButtons& strafeButtons,
+			bool useGivenButtons,
+			CurrentState& curState,
+			TraceFunc traceFunc);
 
-	void Dbc(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc);
-	void Dbg(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc);
-	void LgagstDucktap(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc);
-	void LgagstJump(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc);
-	PositionType Strafe(PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, bool predictOrigin, TraceFunc traceFunc, float fractions[4] = nullptr, float normalzs[4] = nullptr);
+		void LgagstJump(
+			const PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			const HLTAS::Frame& frame,
+			ProcessedFrame& out,
+			bool reduceWishspeed,
+			const HLTAS::StrafeButtons& strafeButtons,
+			bool useGivenButtons,
+			CurrentState& curState,
+			TraceFunc traceFunc);
 
-	/*
-		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
-		result in maximal speed gain. Postype != WATER.
+		PositionType Strafe(
+			PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			const HLTAS::Frame& frame,
+			ProcessedFrame& out,
+			bool reduceWishspeed,
+			const HLTAS::StrafeButtons& strafeButtons,
+			bool useGivenButtons,
+			bool predictOrigin,
+			TraceFunc traceFunc,
+			float fractions[4] = nullptr,
+			float normalzs[4] = nullptr);
+	}
 
-		Struct requirements:
+	namespace anglefuncs
+	{
+		/*
+			Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
+			result in maximal speed gain. Postype != WATER.
+
+			Struct requirements:
+				Velocity;
+				Frametime, Accelerate or Airaccelerate, EntFriction.
+		*/
+		double MaxAccelTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed);
+
+		/*
+			Returns the angle between velocity and wishdir in [0, Pi] that will
+			keep the speed constant as far as possible. Under certain conditions
+			the angle from MaxAccelTheta will be returned. Postype != WATER.
+
+			Struct requirements:
+				Velocity;
+				Frametime, Accelerate or Airaccelerate, EntFriction.
+		*/
+		double ConstSpeedTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed);
+
+		/*
+			Returns the angle in radians - [-Pi; Pi) - between velocity and wishdir that will
+			result in maximal speed gain into the given yaw - [-Pi; Pi). If velocity is zero, vel_yaw will
+			be used in place of velocity angle. Postype != WATER.
+
+			Struct requirements:
+				Velocity;
+				Frametime, Accelerate or Airaccelerate, EntFriction.
+		*/
+		double MaxAccelIntoYawTheta(
+			const PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			double wishspeed,
+			double vel_yaw,
+			double yaw);
+
+		/*
+			Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
+			result in maximal velocity angle change. Sets safeguard_yaw to true if the yaw safeguard
+			is needed and to false otherwise. Postype != WATER.
+
+			Struct requirements:
+				Velocity;
+				Frametime, Accelerate or Airaccelerate, EntFriction.
+		*/
+		double MaxAngleTheta(
+			const PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			double wishspeed,
+			bool& safeguard_yaw);
+
+		/*
+			Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
+			result in maximal decceleration. Sets safeguard_yaw to true if the yaw safeguard
+			is needed and to false otherwise. Postype != WATER.
+
+			Struct requirements:
 			Velocity;
 			Frametime, Accelerate or Airaccelerate, EntFriction.
-	*/
-	double MaxAccelTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed);
+		*/
+		double MaxDeccelTheta(
+			const PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			double wishspeed,
+			bool& safeguard_yaw);
+	}
 
-	/*
-		Returns the angle between velocity and wishdir in [0, Pi] that will
-		keep the speed constant as far as possible. Under certain conditions
-		the angle from MaxAccelTheta will be returned. Postype != WATER.
+	namespace prediction
+	{
+		/*
+			Figures out the player's position type and, if necessary, updates player.Origin and curState.
+		*/
+		PositionType GetPositionType(PlayerData& player, TraceFunc traceFunc);
 
-		Struct requirements:
-			Velocity;
-			Frametime, Accelerate or Airaccelerate, EntFriction.
-	*/
-	double ConstSpeedTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed);
+		/*
+			Limits the velocity components to maxvelocity.
+		*/
+		void CheckVelocity(PlayerData& player, const MovementVars& vars);
 
-	/*
-		Returns the angle in radians - [-Pi; Pi) - between velocity and wishdir that will
-		result in maximal speed gain into the given yaw - [-Pi; Pi). If velocity is zero, vel_yaw will
-		be used in place of velocity angle. Postype != WATER.
+		/*
+			Changes the player data the same way as PM_Duck would, returns a new postype.
+		*/
+		PositionType PredictDuck(
+			PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			CurrentState& curState,
+			const ProcessedFrame& out,
+			TraceFunc traceFunc);
 
-		Struct requirements:
-			Velocity;
-			Frametime, Accelerate or Airaccelerate, EntFriction.
-	*/
-	double MaxAccelIntoYawTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, double vel_yaw, double yaw);
+		/*
+			Changes the player data the same way as PM_Jump would, returns a new postype.
+			Changes the processed frame in case of some duck-when autofuncs.
+		*/
+		PositionType PredictJump(
+			PlayerData& player,
+			PositionType postype,
+			const MovementVars& vars,
+			const HLTAS::Frame& frame,
+			CurrentState& curState,
+			ProcessedFrame& out,
+			TraceFunc traceFunc,
+			bool decreaseDwjTimes = false);
 
-	/*
-		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
-		result in maximal velocity angle change. Sets safeguard_yaw to true if the yaw safeguard
-		is needed and to false otherwise. Postype != WATER.
+		/*
+			Applies the ground friction the same way as PM_Friction would, changing player.Velocity.
+		*/
+		void Friction(PlayerData& player, PositionType postype, const MovementVars& vars, TraceFunc traceFunc);
 
-		Struct requirements:
-			Velocity;
-			Frametime, Accelerate or Airaccelerate, EntFriction.
-	*/
-	double MaxAngleTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, bool& safeguard_yaw);
+		/*
+			Computes the new velocity given unit acceleration vector and wishspeed
+			and stores the result in player.Velocity. Postype != WATER.
 
-	/*
-	Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
-	result in maximal decceleration. Sets safeguard_yaw to true if the yaw safeguard
-	is needed and to false otherwise. Postype != WATER.
+			Struct requirements:
+				Velocity;
+				Frametime, Accelerate or Airaccelerate, EntFriction.
+		*/
+		void VectorFME(
+			PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			double wishspeed,
+			const vec2d& wishdir);
 
-	Struct requirements:
-	Velocity;
-	Frametime, Accelerate or Airaccelerate, EntFriction.
-	*/
-	double MaxDeccelTheta(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, bool& safeguard_yaw);
+		/*
+			Helpers for the movement prediction, do exactly what PM_ClipVelocity and PM_FlyMove do.
+		*/
+		int ClipVelocity(vec& velocity, const vec& normal, float overbounce);
 
-	/*
-		Computes the new velocity given unit acceleration vector and wishspeed
-		and stores the result in player.Velocity. Postype != WATER.
+		void FlyMove(
+			PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			TraceFunc traceFunc,
+			float fractions[4] = nullptr,
+			float normalzs[4] = nullptr);
 
-		Struct requirements:
-			Velocity;
-			Frametime, Accelerate or Airaccelerate, EntFriction.
-	*/
-	void VectorFME(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const double a[2]);
+		/*
+			Computes the new velocity given unit acceleration vector and wishspeed,
+			stores the result in player.Velocity, computes the new position taking the world into consideration
+			and stores the result in player.Origin. Postype != WATER.
 
-	/*
-		Computes the new velocity given unit acceleration vector and wishspeed,
-		stores the result in player.Velocity, computes the new position taking the world into consideration
-		and stores the result in player.Origin. Postype != WATER.
+			Struct requirements:
+			Velocity, Basevelocity, Origin;
+			Frametime, Accelerate or Airaccelerate, EntFriction, EntGravity, Gravity.
+		*/
+		PositionType Move(
+			PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			double wishspeed,
+			TraceFunc traceFunc,
+			bool calcVelocity,
+			const vec2d& wishdir,
+			float fractions[4] = nullptr,
+			float normalzs[4] = nullptr);
 
-		Struct requirements:
-		Velocity, Basevelocity, Origin;
-		Frametime, Accelerate or Airaccelerate, EntFriction, EntGravity, Gravity.
-	*/
-	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, TraceFunc traceFunc, bool calcVelocity = false, const double a[2] = nullptr, float fractions[4] = nullptr, float normalzs[4] = nullptr);
+		/*
+			Checks if the next frame needs to be 0ms.
+		*/
+		void CheckIfNextFrameShouldBe0ms(
+			const PlayerData& player,
+			const MovementVars& vars,
+			const HLTAS::Frame& frame,
+			PositionType postype,
+			ProcessedFrame& out,
+			const HLTAS::StrafeButtons& strafeButtons,
+			bool useGivenButtons,
+			const CurrentState& curState,
+			TraceFunc traceFunc);
 
-	/*
-		Helpers for the movement prediction, do exactly what PM_FlyMove and PM_ClipVelocity do.
-	*/
-	void FlyMove(PlayerData& player, const MovementVars& vars, PositionType postype, TraceFunc traceFunc, float fractions[4] = nullptr, float normalzs[4] = nullptr);
-	int ClipVelocity(float velocity[3], const float normal[3], float overbounce);
+		/*
+			Predicts the changes made in past 0ms frames (since those frames didn't run on the server yet).
+		*/
+		PositionType PredictPast0msFrames(
+			PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			const ProcessedFrame& out,
+			const CurrentState& curState,
+			TraceFunc traceFunc);
+	}
 
-	/*
-		Finds the best yaw to use for the corresponding strafe type taking the anglemod compensation into account, then
-		strafes sideways with that yaw and returns it in radians, given fixed buttons.
-		The resulting velocity is stored in player.Velocity.
-		Uses vel_yaw instead of the Velocity angle if Velocity is zero.
-		Postype != WATER.
+	namespace strafefuncs
+	{
+		/*
+			Finds the best yaw to use for the corresponding strafe type taking the anglemod compensation into account, then
+			strafes sideways with that yaw and returns it in radians, given fixed buttons.
+			The resulting velocity is stored in player.Velocity.
+			Uses vel_yaw instead of the Velocity angle if Velocity is zero.
+			Postype != WATER.
 
-		Struct requirements:
-			Velocity;
-			Frametime, Accelerate or Airaccelerate, EntFriction.
-	*/
-	double SideStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, bool right);
-	double SideStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, bool right);
-	double SideStrafeMaxDeccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, bool right, bool& strafed);
-	double SideStrafeConstSpeed(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, bool right);
+			Struct requirements:
+				Velocity;
+				Frametime, Accelerate or Airaccelerate, EntFriction.
+		*/
+		double SideStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton, double vel_yaw, bool right);
+		double SideStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton, double vel_yaw, bool right);
+		double SideStrafeMaxDeccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton, double vel_yaw, bool right, bool& strafed);
+		double SideStrafeConstSpeed(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton, double vel_yaw, bool right);
 
-	/*
-		Finds the best yaw to use for the corresponding strafe type taking the anglemod compensation into account, then
-		strafes to the best dir with that yaw and returns it in radians, given fixed buttons.
-		The resulting velocity is stored in player.Velocity.
-		Uses vel_yaw instead of the Velocity angle if Velocity is zero.
-		Postype != WATER.
+		/*
+			Finds the best yaw to use for the corresponding strafe type taking the anglemod compensation into account, then
+			strafes to the best dir with that yaw and returns it in radians, given fixed buttons.
+			The resulting velocity is stored in player.Velocity.
+			Uses vel_yaw instead of the Velocity angle if Velocity is zero.
+			Postype != WATER.
 
-		Struct requirements:
-			Velocity;
-			Frametime, Accelerate or Airaccelerate, EntFriction.
-	*/
-	double BestStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw);
-	double BestStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw);
-	double BestStrafeMaxDeccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, bool& strafed);
-	double BestStrafeConstSpeed(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw);
+			Struct requirements:
+				Velocity;
+				Frametime, Accelerate or Airaccelerate, EntFriction.
+		*/
+		double BestStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton, double vel_yaw);
+		double BestStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton, double vel_yaw);
+		double BestStrafeMaxDeccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton, double vel_yaw, bool& strafed);
+		double BestStrafeConstSpeed(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton, double vel_yaw);
 
-	/*
-		Finds the best yaw to use for the corresponding strafe type taking the anglemod compensation into account, then
-		strafes to the given yaw with that yaw and returns it in radians, given fixed buttons.
-		The resulting velocity is stored in player.Velocity.
-		Uses vel_yaw instead of the Velocity angle if Velocity is zero.
-		Postype != WATER.
+		/*
+			Finds the best yaw to use for the corresponding strafe type taking the anglemod compensation into account, then
+			strafes to the given yaw with that yaw and returns it in radians, given fixed buttons.
+			The resulting velocity is stored in player.Velocity.
+			Uses vel_yaw instead of the Velocity angle if Velocity is zero.
+			Postype != WATER.
 
-		Struct requirements:
-			Velocity;
-			Frametime, Accelerate or Airaccelerate, EntFriction.
-	*/
-	double YawStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, double yaw);
-	double YawStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, double yaw);
-	double YawStrafeMaxDeccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, double yaw, bool& strafed);
-	double YawStrafeConstSpeed(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, double yaw);
+			Struct requirements:
+				Velocity;
+				Frametime, Accelerate or Airaccelerate, EntFriction.
+		*/
+		double YawStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton, double vel_yaw, double yaw);
+		double YawStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton, double vel_yaw, double yaw);
+		double YawStrafeMaxDeccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton, double vel_yaw, double yaw, bool& strafed);
+		double YawStrafeConstSpeed(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton, double vel_yaw, double yaw);
 
-	/*
-		Finds the best yaw to use for the given strafe type taking the anglemod compensation into account, then
-		strafes to the given point if needed with that yaw and returns it in radians, given fixed buttons. If not strafing
-		is better, set strafed to false, otherwise - to true.
-		The resulting velocity is stored in player.Velocity.
-		Uses vel_yaw instead of the Velocity angle if Velocity is zero.
-		Postype != WATER.
+		/*
+			Finds the best yaw to use for the given strafe type taking the anglemod compensation into account, then
+			strafes to the given point if needed with that yaw and returns it in radians, given fixed buttons. If not strafing
+			is better, set strafed to false, otherwise - to true.
+			The resulting velocity is stored in player.Velocity.
+			Uses vel_yaw instead of the Velocity angle if Velocity is zero.
+			Postype != WATER.
 
-		Struct requirements:
-			Velocity, Origin;
-			Frametime, Accelerate or Airaccelerate, EntFriction.
-	*/
-	double PointStrafe(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, HLTAS::StrafeType type, double point[2], bool& strafed);
+			Struct requirements:
+				Velocity, Origin;
+				Frametime, Accelerate or Airaccelerate, EntFriction.
+		*/
+		double PointStrafe(
+			PlayerData& player,
+			const MovementVars& vars,
+			PositionType postype,
+			double wishspeed,
+			const HLTAS::StrafeButtons& strafeButtons,
+			bool useGivenButtons,
+			HLTAS::Button& usedButton,
+			double vel_yaw,
+			HLTAS::StrafeType type,
+			const vec2d& point,
+			bool& strafed);
+	}
 }
