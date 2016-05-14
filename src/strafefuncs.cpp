@@ -495,7 +495,7 @@ namespace strafefuncs
 			temp_vel.as_2d().len_sq(),
 			player.Velocity.as_2d().len_sq()
 		};
-		double oldspeedsqr = orig_vel.as_2d().len_sq();
+		double oldspeedsqr = player.SpeedBeforeFriction * player.SpeedBeforeFriction;
 
 		if (std::fabs(oldspeedsqr - speedsqrs[0]) <= std::fabs(oldspeedsqr - speedsqrs[1])) {
 			player.Velocity = temp_vel;
@@ -679,7 +679,6 @@ namespace strafefuncs
 	{
 		assert(postype != PositionType::WATER);
 
-		double oldspeedsqr = player.Velocity.as_2d().len_sq();
 		double theta = ConstSpeedTheta(player, vars, postype, wishspeed);
 
 		vec2d velocities[2];
@@ -703,6 +702,7 @@ namespace strafefuncs
 			velocities[0].len_sq(),
 			velocities[1].len_sq()
 		};
+		double oldspeedsqr = player.SpeedBeforeFriction * player.SpeedBeforeFriction;
 
 		if (std::fabs(speedsqrs[0] - oldspeedsqr) <= std::fabs(speedsqrs[1] - oldspeedsqr)) {
 			player.Velocity.as_2d() = velocities[0];
