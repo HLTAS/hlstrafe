@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <sstream>
 
 #include "hlstrafe.hpp"
 #include "util.hpp"
