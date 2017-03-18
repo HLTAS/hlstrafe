@@ -20,6 +20,9 @@ namespace VCT
 		/// Maxspeed used during the table generation.
 		float maxspeed;
 
+		/// The VCT is exactly the same for any maxspeed less than or equal to this value.
+		constexpr float MAXSPEED_VCT_CAP = 1023.0f;
+
 		/// Generate the VCT. Only Maxspeed is needed from vars.
 		void ComputeVCT(const MovementVars& vars) {
 			/// Maximal value for forwardmove and sidemove.
@@ -43,28 +46,29 @@ namespace VCT
 				p = k * p - tmpF;
 				q = k * q - tmpS;
 
-				int fac = std::ceil(maxspeed / std::sqrt(F * F + S * S));
-				if (S * fac > MAX_MOVE)
-					continue;
+				int16_t fac = 2047 / S;
 
 				Entry entry;
-				entry.F = F;
-				entry.S = S;
+				entry.F = F * fac;
+				entry.S = S * fac;
+
+				// Skip pairs giving speed below maxspeed.
+				if (maxspeed > MAXSPEED_VCT_CAP
+					&& maxspeed * maxspeed > entry.F * entry.F + entry.S * entry.S)
+					continue;
 
 				double phi = 2 * M_PI - std::atan(static_cast<double>(S) / F);
 				entry.r = phi - AngleModRad(phi);
 				table.push_back(entry);
 
 				entry.r = (entry.r == 0.0 ? 0.0 : M_U_RAD - entry.r);
-				tmpS = entry.S;
-				entry.S = entry.F;
-				entry.F = tmpS;
+				std::swap(entry.F, entry.S);
 				table.push_back(entry);
 			}
 
 			// Add 0 and PI / 4 angles omitted in the loop above.
-			table.push_back(Entry { 0.0, 0, 1 });
-			table.push_back(Entry { 0.0, 1, 1 });
+			table.push_back(Entry { 0.0, 0, 2047 });
+			table.push_back(Entry { 0.0, 2047, 2047 });
 
 			std::sort(table.begin(), table.end());
 		}

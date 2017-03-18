@@ -7,14 +7,14 @@ namespace HLStrafe
 namespace VCT
 {
 	struct Entry {
-		/// Difference between atan2(S, F) and anglemod(atan2(S, F)).
+		/// Difference between the angle given by the [F, S] vector and its anglemod.
 		double r;
 
 		/// The corresponding forwardmove and sidemove.
 		/// F and S satisfy:
-		/// - F and S are coprime,
 		/// - F >= 0, S >= 0,
-		/// - F <= 2047, S <= 2047.
+		/// - F <= 2047, S <= 2047,
+		/// - Length of the [F, S] vector is maximal under given constraints.
 		int16_t F;
 		int16_t S;
 
