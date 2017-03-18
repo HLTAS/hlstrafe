@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <cmath>
+// Temporary, for debug printfs
+#include <cstdio>
 #include <vector>
 
 #include "hlstrafe.hpp"
@@ -71,7 +73,22 @@ namespace VCT
 			table.push_back(Entry { 0.0, 2047, 2047 });
 
 			std::sort(table.begin(), table.end());
+
+			std::printf("VCT size: %zu\n", table.size());
 		}
+	}
+
+	const Entry& GetBestVector(const MovementVars& vars,
+	                           double target_angle,
+	                           std::pair<uint16_t, uint16_t> yaw_constraints) {
+		// Regenerate the VCT if needed,
+		if (table.empty() // so either the table is empty,
+			|| (maxspeed != vars.Maxspeed // or the maxspeed is different and above the cap
+				&& (maxspeed > MAXSPEED_VCT_CAP || vars.Maxspeed > MAXSPEED_VCT_CAP)))
+			ComputeVCT(vars);
+
+		// Stub.
+		return table[0];
 	}
 } // VCT
 
