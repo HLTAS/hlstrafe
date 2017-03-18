@@ -3,7 +3,7 @@ project(hlstrafe)
 
 add_subdirectory(hltas)
 
-add_library(hlstrafe src/hlstrafe.cpp)
+add_library(hlstrafe src/hlstrafe.cpp src/vct.cpp)
 set_property(TARGET hlstrafe PROPERTY CXX_STANDARD 14)
 target_include_directories(hlstrafe PUBLIC src)
 target_link_libraries(hlstrafe hltas-cpp)

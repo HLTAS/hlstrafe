@@ -5,6 +5,7 @@
 
 #include "hlstrafe.hpp"
 #include "util.hpp"
+#include "vct.hpp"
 
 // #include "../../SPTLib/sptlib.hpp"
 
