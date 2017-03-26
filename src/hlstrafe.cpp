@@ -488,6 +488,9 @@ namespace HLStrafe
 		switch (curState.Parameters.Type) {
 			case HLTAS::ConstraintsType::VELOCITY:
 			{
+				if (curState.Parameters.Parameters.Velocity.Constraints >= 180)
+					return VCT::AngleConstraints(0, 65535);
+				
 				return VCT::AngleConstraints(
 					static_cast<int>((vel_yaw - curState.Parameters.Parameters.Velocity.Constraints * M_DEG2RAD) * M_INVU_RAD),
 					static_cast<int>(std::ceil((vel_yaw + curState.Parameters.Parameters.Velocity.Constraints * M_DEG2RAD) * M_INVU_RAD))
@@ -496,6 +499,9 @@ namespace HLStrafe
 
 			case HLTAS::ConstraintsType::YAW:
 			{
+				if (curState.Parameters.Parameters.Yaw.Constraints >= 180)
+					return VCT::AngleConstraints(0, 65535);
+				
 				return VCT::AngleConstraints(
 					static_cast<int>((curState.Parameters.Parameters.Yaw.Yaw - curState.Parameters.Parameters.Yaw.Constraints) * M_INVU_DEG),
 					static_cast<int>(std::ceil((curState.Parameters.Parameters.Yaw.Yaw + curState.Parameters.Parameters.Yaw.Constraints) * M_INVU_DEG))
@@ -504,6 +510,9 @@ namespace HLStrafe
 
 			case HLTAS::ConstraintsType::YAW_RANGE:
 			{
+				if (curState.Parameters.Parameters.YawRange.HighestYaw - curState.Parameters.Parameters.YawRange.LowestYaw >= 360)
+					return VCT::AngleConstraints(0, 65535);
+
 				return VCT::AngleConstraints(
 					static_cast<int>(curState.Parameters.Parameters.YawRange.LowestYaw * M_INVU_DEG),
 					static_cast<int>(curState.Parameters.Parameters.YawRange.HighestYaw * M_INVU_DEG)
