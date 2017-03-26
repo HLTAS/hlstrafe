@@ -52,7 +52,8 @@ namespace VCT
 
 		/// Calculate distance between the given angle and the interval defined by the constraints.
 		uint16_t DistanceTo(uint16_t angle) const {
-			return std::abs(Closest(angle) - angle);
+			const uint16_t dif = Closest(angle) - angle;
+			return std::min(dif, static_cast<uint16_t>(65536 - dif));
 		}
 
 		/// Return the closest angle to the given angle which satisfies the constraints.
