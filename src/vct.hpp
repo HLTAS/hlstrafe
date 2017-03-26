@@ -24,17 +24,38 @@ namespace VCT
 	};
 
 	/**
+	 * Class representing angle constraints.
+	 *
+	 * The values are given in M_U multiples mod 65536. So, for example,
+	 * if the lowest constraint is set to 65534 and the highest set to 1,
+	 * the satisfying angles would be 65534, 65535, 0 and 1.
+	 */
+	class AngleConstraints {
+	public:
+		AngleConstraints(uint16_t lowest, uint16_t highest)
+			: lowest(lowest)
+			, highest(highest)
+		{
+		}
+
+		/// Lowest angle satisfying the constraints.
+		const uint16_t lowest;
+
+		/// Highest angle satisfying the constraints.
+		const uint16_t highest;
+	};
+
+	/**
 	 * Find and return the best VCT entry for the given target accel angle.
 	 *
 	 * @param vars Movement variables, only Maxspeed is used
 	 * @param target_angle Desired acceleration vector angle
-	 * @param yaw_constraints The resulting player yaw should be >= the first angle
-	 *                        and <= the second angle. The angles are given in M_U multiples
+	 * @param yaw_constraints Constraints for the player yaw angle
 	 * @return The optimal VCT entry.
 	 */
 	const Entry& GetBestVector(const MovementVars& vars,
 	                           double target_angle,
-	                           std::pair<uint16_t, uint16_t> yaw_constraints);
+	                           const AngleConstraints& yaw_constraints);
 } // VCT
 
 } // HLStrafe

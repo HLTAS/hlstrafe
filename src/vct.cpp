@@ -80,7 +80,7 @@ namespace VCT
 
 	const Entry& GetBestVector(const MovementVars& vars,
 	                           double target_angle,
-	                           std::pair<uint16_t, uint16_t> yaw_constraints) {
+	                           const AngleConstraints& yaw_constraints) {
 		// Regenerate the VCT if needed,
 		if (table.empty() // so either the table is empty,
 			|| (maxspeed != vars.Maxspeed // or the maxspeed is different and above the cap
