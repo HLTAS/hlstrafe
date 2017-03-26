@@ -87,8 +87,49 @@ namespace VCT
 				&& (maxspeed > MAXSPEED_VCT_CAP || vars.Maxspeed > MAXSPEED_VCT_CAP)))
 			ComputeVCT(vars);
 
-		// Stub.
-		return table[0];
+		std::printf("Target yaw: %.8f", target_angle);
+
+		target_angle = NormalizeRad(target_angle);
+
+		// We need angle in [0; 2Pi) to correctly compare with anglemod.
+		if (target_angle < 0)
+			target_angle += 2 * M_PI;
+
+		const auto target_angle_am = AngleModRad(target_angle);
+		const auto difference = target_angle - target_angle_am; // difference >= 0.
+
+		auto best_match_it = table.cbegin(); // This works for difference = 0.
+
+		// Find best matching entry, unconstrained.
+		if (difference > 0) {
+			const auto it = std::lower_bound(table.cbegin(),
+			                                 table.cend(),
+			                                 difference,
+			                                 [](const Entry& a, const double& b) {
+			                                 	return a.r < b;
+			                                 });
+			
+			const auto prev = it - 1;
+
+			if (it == table.cend()) {
+				best_match_it = prev;
+			} else if (difference == it->r) {
+				best_match_it = it;
+			} else {
+				const auto dif1 = it->r - difference;
+				const auto dif2 = difference - prev->r;
+
+				if (dif1 <= dif2)
+					best_match_it = it;
+				else
+					best_match_it = prev;
+			}
+		}
+
+		std::printf("; best entry offset: %.16f, atan2: %.8f, fs: %hu, %hu\n", std::fabs(best_match_it->r - difference), std::atan2(-best_match_it->S, best_match_it->F), best_match_it->F, best_match_it->S);
+
+		// TODO: constraints.
+		return *best_match_it;
 	}
 } // VCT
 

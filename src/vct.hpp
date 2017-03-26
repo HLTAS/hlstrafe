@@ -34,8 +34,7 @@ namespace VCT
 	public:
 		AngleConstraints(uint16_t lowest, uint16_t highest)
 			: lowest(lowest)
-			, highest(highest)
-		{
+			, highest(highest) {
 		}
 
 		/// Lowest angle satisfying the constraints.
