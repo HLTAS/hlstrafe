@@ -25,6 +25,24 @@ namespace VCT
 		/// The VCT is exactly the same for any maxspeed less than or equal to this value.
 		constexpr float MAXSPEED_VCT_CAP = 1023.0f;
 
+		/// Add rotations of the given entry to the VCT.
+		void AddRotations(Entry& entry) {
+			const auto F = entry.F;
+			const auto S = entry.S;
+
+			entry.F = -S;
+			entry.S = F;
+			table.push_back(entry);
+
+			entry.F = -F;
+			entry.S = -S;
+			table.push_back(entry);
+
+			entry.F = S;
+			entry.S = -F;
+			table.push_back(entry);
+		}
+
 		/// Generate the VCT. Only Maxspeed is needed from vars.
 		void ComputeVCT(const MovementVars& vars) {
 			/// Maximal value for forwardmove and sidemove.
@@ -38,6 +56,8 @@ namespace VCT
 			int16_t p = 1;
 			int16_t q = MAX_MOVE;
 
+			Entry entry;
+
 			while (p != 1 || q != 1)
 			{
 				int16_t k = (MAX_MOVE + S) / q;
@@ -50,7 +70,6 @@ namespace VCT
 
 				int16_t fac = 2047 / S;
 
-				Entry entry;
 				entry.F = F * fac;
 				entry.S = S * fac;
 
@@ -62,20 +81,87 @@ namespace VCT
 				double phi = 2 * M_PI - std::atan(static_cast<double>(S) / F);
 				entry.r = phi - AngleModRad(phi);
 				table.push_back(entry);
+				AddRotations(entry);
 
 				entry.r = (entry.r == 0.0 ? 0.0 : M_U_RAD - entry.r);
 				std::swap(entry.F, entry.S);
 				table.push_back(entry);
+				AddRotations(entry);
 			}
 
 			// Add 0 and PI / 4 angles omitted in the loop above.
-			table.push_back(Entry { 0.0, 0, 2047 });
-			table.push_back(Entry { 0.0, 2047, 2047 });
+			entry = Entry { 0.0, 0, 2047 };
+			table.push_back(entry);
+			AddRotations(entry);
+
+			entry.F = 2047;
+			table.push_back(entry);
+			AddRotations(entry);
 
 			std::sort(table.begin(), table.end());
 
 			std::printf("VCT size: %zu\n", table.size());
 		}
+
+		class BestMatchIterator {
+			using It = decltype(table)::const_iterator;
+
+		public:
+			BestMatchIterator(It start, double difference)
+				: low(start)
+				, high(start)
+				, difference(difference) {
+				if (high != table.cend())
+					++high;
+
+				if (low != table.cbegin())
+					--low;
+				else
+					low = table.cend();
+			}
+
+			bool HasNext() const {
+				return low != table.cend() || high != table.cend();
+			}
+
+			It Next() {
+				if (high == table.cend()) {
+					const auto rv = low;
+
+					if (low == table.cbegin())
+						low = table.cend();
+					else
+						--low;
+
+					return rv;
+				} else if (low == table.cend()) {
+					return high++;
+				} else {
+					// Both high and low are valid.
+					// Pick the one closest by r.
+					const auto low_dif = difference - low->r;
+					const auto high_dif = high->r - difference;
+
+					if (high_dif <= low_dif) {
+						return high++;
+					} else {
+						const auto rv = low;
+
+						if (low == table.cbegin())
+							low = table.cend();
+						else
+							--low;
+
+						return rv;
+					}
+				}
+			}
+
+		private:
+			It low;
+			It high;
+			const double difference;
+		};
 	}
 
 	const Entry& GetBestVector(const MovementVars& vars,
@@ -126,9 +212,42 @@ namespace VCT
 			}
 		}
 
-		std::printf("; best entry offset: %.16f, atan2: %.8f, fs: %hu, %hu\n", std::fabs(best_match_it->r - difference), std::atan2(-best_match_it->S, best_match_it->F), best_match_it->F, best_match_it->S);
+		// Check the constraints.
+		auto fs_angle = NormalizeRad(Atan2(-best_match_it->S, best_match_it->F));
+		if (fs_angle < 0)
+			fs_angle += 2 * M_PI;
 
-		// TODO: constraints.
+		if (!yaw_constraints.Contain(std::floor(target_angle * M_INVU_RAD)
+		                             - std::floor(fs_angle * M_INVU_RAD))) {
+			// Find an entry that does satisfy the constraints.
+			auto best_distance = yaw_constraints.DistanceTo(std::floor(target_angle * M_INVU_RAD)
+			                                                - std::floor(fs_angle * M_INVU_RAD));
+			
+			size_t iterations = 0;
+
+			BestMatchIterator it(best_match_it, difference);
+			while (best_distance > 0 && it.HasNext()) {
+				++iterations;
+				const auto check_it = it.Next();
+
+				fs_angle = NormalizeRad(Atan2(-check_it->S, check_it->F));
+				if (fs_angle < 0)
+					fs_angle += 2 * M_PI;
+
+				const auto distance = yaw_constraints.DistanceTo(std::floor(target_angle * M_INVU_RAD)
+				                                                 - std::floor(fs_angle * M_INVU_RAD));
+
+				if (distance < best_distance) {
+					best_distance = distance;
+					best_match_it = check_it;
+				}
+			}
+
+			std::printf("; found a good entry in %zu iterations", iterations);
+		}
+
+		std::printf("; best entry offset: %.16f, atan2: %.8f, fs: %hd, %hd\n", std::fabs(best_match_it->r - difference), std::atan2(-best_match_it->S, best_match_it->F), best_match_it->F, best_match_it->S);
+
 		return *best_match_it;
 	}
 } // VCT
