@@ -94,7 +94,8 @@ namespace HLStrafe
 			LgagstsLeft(0),
 			PredictThis(State0ms::NOTHING),
 			Algorithm(HLTAS::StrafingAlgorithm::YAW),
-			Parameters()
+			Parameters(),
+			LastVelocity()
 		{};
 
 		bool Jump;
@@ -116,6 +117,8 @@ namespace HLStrafe
 
 		HLTAS::StrafingAlgorithm Algorithm;
 		HLTAS::AlgorithmParameters Parameters; // Only valid if Algorithm == VECTORIAL.
+
+		float LastVelocity[2]; // Used for velocity_avg target yaw in the vectorial algorithm.
 	};
 
 	struct TraceResult {

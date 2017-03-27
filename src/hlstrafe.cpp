@@ -487,6 +487,7 @@ namespace HLStrafe
 	{
 		switch (curState.Parameters.Type) {
 			case HLTAS::ConstraintsType::VELOCITY:
+			case HLTAS::ConstraintsType::VELOCITY_AVG:
 			{
 				if (curState.Parameters.Parameters.Velocity.Constraints >= 180)
 					return VCT::AngleConstraints(0, 65535);
@@ -592,7 +593,18 @@ namespace HLStrafe
 		} else {
 			theta = right ? -theta : theta;
 
-			const auto constraints = ComputeConstraints(vel_yaw, curState);
+			auto vel_yaw_for_constraints = vel_yaw;
+
+			if (curState.Parameters.Type == HLTAS::ConstraintsType::VELOCITY_AVG) {
+				float avg_vel[2];
+				VecCopy<float, 2>(curState.LastVelocity, avg_vel);
+				VecAdd<float, float, 2>(avg_vel, player.Velocity, avg_vel);
+
+				if (!IsZero(avg_vel))
+					vel_yaw_for_constraints = Atan2(avg_vel[1], avg_vel[0]);
+			}
+
+			const auto constraints = ComputeConstraints(vel_yaw_for_constraints, curState);
 			const auto vector = VCT::GetBestVector(vars, vel_yaw + theta, constraints);
 
 			// Compute the player yaw.
@@ -1729,8 +1741,10 @@ namespace HLStrafe
 		//EngineMsg("p pr %f\t%f\t%f\t%f\t%f\t%f\n", player.Origin[0], player.Origin[1], player.Origin[2], player.Velocity[0], player.Velocity[1], player.Velocity[2]);
 		auto playerCopy = PlayerData(player); // Our copy that we will mess with.
 		auto postype = GetPositionType(playerCopy, traceFunc);
-		if (postype == PositionType::WATER)
+		if (postype == PositionType::WATER) {
+			VecCopy<float, 2>(player.Velocity, curState.LastVelocity);
 			return out;
+		}
 
 		postype = PredictPast0msFrames(playerCopy, vars, postype, out, curState, traceFunc);
 		// We only need to set PredictThis on 0ms frames and for that we need to know the previous state.
@@ -1769,6 +1783,7 @@ namespace HLStrafe
 		curState.Jump = out.Jump;
 		curState.Duck = out.Duck;
 		out.NewPlayerData = playerCopy;
+		VecCopy<float, 2>(player.Velocity, curState.LastVelocity);
 		return out;
 	}
 
