@@ -1246,6 +1246,7 @@ namespace HLStrafe
 
 		// Predict the next frame's origin.
 		auto playerCopy = PlayerData(player);
+		CheckVelocity(playerCopy, vars);
 		Friction(playerCopy, postype, vars, traceFunc);
 		auto out_temp = ProcessedFrame(out);
 		Strafe(playerCopy, vars, postype, frame, out_temp, reduceWishspeed, strafeButtons, useGivenButtons, true, traceFunc);
@@ -1292,13 +1293,16 @@ namespace HLStrafe
 			|| Length<float, 2>(player.Velocity) < curState.LgagstMinSpeed)
 			return;
 
-		auto ground = PlayerData(player);
+		auto playerCopy = PlayerData(player);
+		CheckVelocity(playerCopy, vars);
+
+		auto ground = PlayerData(playerCopy);
 		Friction(ground, postype, vars, traceFunc);
 		CheckVelocity(ground, vars);
 		auto out_temp = ProcessedFrame(out);
 		Strafe(ground, vars, postype, frame, out_temp, reduceWishspeed && !curState.LgagstFullMaxspeed, strafeButtons, useGivenButtons, false, traceFunc);
 
-		auto air = PlayerData(player);
+		auto air = PlayerData(playerCopy);
 		out_temp = ProcessedFrame(out);
 		out_temp.Jump = true;
 		auto curState_temp = CurrentState(curState);
