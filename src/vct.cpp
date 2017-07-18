@@ -2,6 +2,7 @@
 #include <cmath>
 // Temporary, for debug printfs
 #include <cstdio>
+#include <mutex>
 #include <vector>
 
 #include "hlstrafe.hpp"
@@ -18,6 +19,9 @@ namespace VCT
 		/// The vectorial compensation table itself.
 		/// This vector is sorted by entry.r.
 		std::vector<Entry> table;
+
+		/// Mutex for accessing the table.
+		std::mutex table_mutex;
 
 		/// Maxspeed used during the table generation.
 		float maxspeed;
@@ -167,6 +171,8 @@ namespace VCT
 	const Entry& GetBestVector(const MovementVars& vars,
 	                           double target_angle,
 	                           const AngleConstraints& yaw_constraints) {
+		std::lock_guard<std::mutex> table_guard(table_mutex);
+
 		// Regenerate the VCT if needed,
 		if (table.empty() // so either the table is empty,
 			|| (maxspeed != vars.Maxspeed // or the maxspeed is different and above the cap
