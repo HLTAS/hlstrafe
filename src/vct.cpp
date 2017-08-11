@@ -223,11 +223,10 @@ namespace VCT
 		if (fs_angle < 0)
 			fs_angle += 2 * M_PI;
 
-		if (!yaw_constraints.Contain(std::floor(target_angle * M_INVU_RAD)
-		                             - std::floor(fs_angle * M_INVU_RAD))) {
+		auto yaw = static_cast<uint16_t>(std::floor(target_angle * M_INVU_RAD) - std::floor(fs_angle * M_INVU_RAD));
+		if (!yaw_constraints.Contain(yaw)) {
 			// Find an entry that does satisfy the constraints.
-			auto best_distance = yaw_constraints.DistanceTo(std::floor(target_angle * M_INVU_RAD)
-			                                                - std::floor(fs_angle * M_INVU_RAD));
+			auto best_distance = yaw_constraints.DistanceTo(yaw);
 			
 			size_t iterations = 0;
 
@@ -240,8 +239,8 @@ namespace VCT
 				if (fs_angle < 0)
 					fs_angle += 2 * M_PI;
 
-				const auto distance = yaw_constraints.DistanceTo(std::floor(target_angle * M_INVU_RAD)
-				                                                 - std::floor(fs_angle * M_INVU_RAD));
+				yaw = static_cast<uint16_t>(std::floor(target_angle * M_INVU_RAD) - std::floor(fs_angle * M_INVU_RAD));
+				const auto distance = yaw_constraints.DistanceTo(yaw);
 
 				if (distance < best_distance) {
 					best_distance = distance;

@@ -636,9 +636,9 @@ namespace HLStrafe
 			right = vector.S > 0;
 			left = vector.S < 0;
 
-			out.Forwardspeed = forward ? vector.F : 0;
-			out.Backspeed = back ? -vector.F : 0;
-			out.Sidespeed = std::abs(vector.S);
+			out.Forwardspeed = static_cast<float>(forward ? vector.F : 0);
+			out.Backspeed = static_cast<float>(back ? -vector.F : 0);
+			out.Sidespeed = static_cast<float>(std::abs(vector.S));
 
 			if (forward) {
 				if (left)
