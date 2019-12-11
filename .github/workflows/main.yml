@@ -14,6 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
+    - name: Fetch submodules
+      run: git submodule update --init --recursive
+
     - name: Generate the build system
       run: |
         mkdir build
