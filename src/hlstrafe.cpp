@@ -1401,7 +1401,9 @@ namespace HLStrafe
 			}
 		}
 
-		double a[2];
+		// Should be unconditionally uninitialized before use, but better safe than sorry.
+		// (also old g++ complains about this)
+		double a[2] = { 0, 0 };
 		if (strafed) {
 			out.Forward = (usedButton == HLTAS::Button::FORWARD || usedButton == HLTAS::Button::FORWARD_LEFT  || usedButton == HLTAS::Button::FORWARD_RIGHT);
 			out.Back =    (usedButton == HLTAS::Button::BACK    || usedButton == HLTAS::Button::BACK_LEFT     || usedButton == HLTAS::Button::BACK_RIGHT);
