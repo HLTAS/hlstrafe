@@ -1583,6 +1583,7 @@ namespace HLStrafe
 		//EngineMsg("p po %f\t%f\t%f\t%f\t%f\t%f\n", playerCopy.Origin[0], playerCopy.Origin[1], playerCopy.Origin[2], playerCopy.Velocity[0], playerCopy.Velocity[1], playerCopy.Velocity[2]);
 		curState.Jump = out.Jump;
 		curState.Duck = out.Duck;
+		out.NewPlayerData = playerCopy;
 		return out;
 	}
 

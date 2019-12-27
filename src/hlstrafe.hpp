@@ -61,6 +61,8 @@ namespace HLStrafe
 		float Upspeed;
 
 		bool NextFrameIs0ms;
+
+		PlayerData NewPlayerData;
 	};
 
 	enum class State0ms {
