@@ -63,6 +63,8 @@ namespace HLStrafe
 		bool NextFrameIs0ms;
 
 		PlayerData NewPlayerData;
+		float fractions[4];
+		float normalzs[4];
 	};
 
 	enum class State0ms {
