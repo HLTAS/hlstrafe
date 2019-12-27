@@ -207,6 +207,8 @@ namespace HLStrafe
 				auto tr = traceFunc(player.Origin, dest, (player.Ducking) ? HullType::DUCKED : HullType::NORMAL);
 				if (tr.Fraction == 1.0f) {
 					VecCopy<float, 3>(tr.EndPos, player.Origin);
+					if (fractions)
+						fractions[0] = 1;
 				} else {
 					// Figure out the end position when trying to walk up a step.
 					auto playerUp = PlayerData(player);
@@ -215,7 +217,8 @@ namespace HLStrafe
 					if (!tr.StartSolid && !tr.AllSolid)
 						VecCopy<float, 3>(tr.EndPos, playerUp.Origin);
 
-					FlyMove(playerUp, vars, postype, traceFunc, fractions, normalzs);
+					float fractions_up[4] = {0, 0, 0, 0}, normalzs_up[4] = {0, 0, 0, 0};
+					FlyMove(playerUp, vars, postype, traceFunc, fractions_up, normalzs_up);
 					VecCopy<float, 3>(playerUp.Origin, dest);
 					dest[2] -= vars.Stepsize;
 
@@ -225,7 +228,7 @@ namespace HLStrafe
 
 					// Figure out the end position when _not_ trying to walk up a step.
 					auto playerDown = PlayerData(player);
-					FlyMove(playerDown, vars, postype, traceFunc);
+					FlyMove(playerDown, vars, postype, traceFunc, fractions, normalzs);
 
 					// Take whichever move was the furthest.
 					auto downdist = (playerDown.Origin[0] - player.Origin[0]) * (playerDown.Origin[0] - player.Origin[0])
@@ -240,6 +243,10 @@ namespace HLStrafe
 						VecCopy<float, 3>(playerUp.Origin, player.Origin);
 						VecCopy<float, 2>(playerUp.Velocity, player.Velocity);
 						player.Velocity[2] = playerDown.Velocity[2];
+						if (fractions)
+							VecCopy<float, 4>(fractions_up, fractions);
+						if (normalzs)
+							VecCopy<float, 4>(normalzs_up, normalzs);
 					}
 				}
 			}
