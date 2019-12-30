@@ -500,7 +500,14 @@ namespace HLStrafe
 					usedButton = strafeButtons.GroundLeft;
 			}
 		} else {
-			usedButton = GetBestButtons(theta, right);
+			// If the velocity is zero, theta is based on the viewangle yaw, which means the button
+			// will be based on the viewangle yaw, which is wrong. Force the button to forward when
+			// the velocity is zero, this makes sense as it will be set to forward anyway as soon
+			// as the velocity becomes non-zero (because theta is small initially).
+			if (IsZero<float, 2>(player.Velocity))
+				usedButton = HLTAS::Button::FORWARD;
+			else
+				usedButton = GetBestButtons(theta, right);
 		}
 		double phi = ButtonsPhi(usedButton);
 		theta = right ? -theta : theta;
