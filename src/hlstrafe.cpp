@@ -423,6 +423,65 @@ namespace HLStrafe
 			return HLTAS::Button::BACK;
 	}
 
+	static inline void GetAVec(float yaw, double wishspeed, HLTAS::Button buttons, double avec[2])
+	{
+		float sy = std::sin(yaw * (M_PI * 2 / 360));
+		float cy = std::cos(yaw * (M_PI * 2 / 360));
+
+		float forward[3] = { cy, sy, 0 };
+		float right[3] = { sy, -cy, 0 };
+
+		float fmove, smove;
+
+		switch (buttons) {
+		case HLTAS::Button::FORWARD:
+			fmove = wishspeed;
+			smove = 0;
+			break;
+
+		case HLTAS::Button::BACK:
+			fmove = -wishspeed;
+			smove = 0;
+			break;
+
+		case HLTAS::Button::LEFT:
+			fmove = 0;
+			smove = -wishspeed;
+			break;
+
+		case HLTAS::Button::RIGHT:
+			fmove = 0;
+			smove = wishspeed;
+			break;
+
+		case HLTAS::Button::FORWARD_RIGHT:
+			fmove = wishspeed / std::sqrt(2.0);
+			smove = wishspeed / std::sqrt(2.0);
+			break;
+
+		case HLTAS::Button::FORWARD_LEFT:
+			fmove = wishspeed / std::sqrt(2.0);
+			smove = -wishspeed / std::sqrt(2.0);
+			break;
+
+		case HLTAS::Button::BACK_RIGHT:
+			fmove = -wishspeed / std::sqrt(2.0);
+			smove = wishspeed / std::sqrt(2.0);
+			break;
+
+		case HLTAS::Button::BACK_LEFT:
+			fmove = -wishspeed / std::sqrt(2.0);
+			smove = -wishspeed / std::sqrt(2.0);
+			break;
+		}
+
+		float wishvel[2] = { forward[0] * fmove + right[0] * smove, forward[1] * fmove + right[1] * smove };
+		Normalize<float, 2>(wishvel, wishvel);
+
+		avec[0] = wishvel[0];
+		avec[1] = wishvel[1];
+	}
+
 	static void SideStrafeGeneral(const PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed,
 		const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton, double vel_yaw, double theta, bool right, bool safeguard_yaw, float velocities[2][2], double yaws[2])
 	{
@@ -464,12 +523,14 @@ namespace HLStrafe
 			yaws[1] = AngleModRad(yaw + std::copysign(M_U_RAD, yaw));
 
 		double avec[2] = { std::cos(yaws[0] + phi), std::sin(yaws[0] + phi) };
+		GetAVec(yaws[0] * M_RAD2DEG, wishspeed, usedButton, avec);
 		PlayerData pl = player;
 		VectorFME(pl, vars, postype, wishspeed, avec);
 		VecCopy<float, 2>(pl.Velocity, velocities[0]);
 
 		avec[0] = std::cos(yaws[1] + phi);
 		avec[1] = std::sin(yaws[1] + phi);
+		GetAVec(yaws[1] * M_RAD2DEG, wishspeed, usedButton, avec);
 		VecCopy<float, 2>(player.Velocity, pl.Velocity);
 		VectorFME(pl, vars, postype, wishspeed, avec);
 		VecCopy<float, 2>(pl.Velocity, velocities[1]);
