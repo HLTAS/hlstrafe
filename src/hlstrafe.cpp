@@ -619,7 +619,7 @@ namespace HLStrafe
 
 			const auto yaw = constraints.Closest(static_cast<uint16_t>(target_angle * M_INVU_RAD) - static_cast<uint16_t>(fs_angle * M_INVU_RAD)) * M_U_RAD;
 
-			std::printf("player yaw: %.8f, accel yaw: %.8f, diff: %.16f\n", yaw, yaw + fs_angle, std::fabs(NormalizeRad(yaw + fs_angle - target_angle)));
+			// std::printf("player yaw: %.8f, accel yaw: %.8f, diff: %.16f\n", yaw, yaw + fs_angle, std::fabs(NormalizeRad(yaw + fs_angle - target_angle)));
 
 			double avec[2] = { std::cos(yaw + fs_angle), std::sin(yaw + fs_angle) };
 			PlayerData pl = player;

@@ -179,7 +179,7 @@ namespace VCT
 				&& (maxspeed > MAXSPEED_VCT_CAP || vars.Maxspeed > MAXSPEED_VCT_CAP)))
 			ComputeVCT(vars);
 
-		std::printf("Target yaw: %.8f", target_angle);
+		// std::printf("Target yaw: %.8f", target_angle);
 
 		target_angle = NormalizeRad(target_angle);
 
@@ -248,10 +248,10 @@ namespace VCT
 				}
 			}
 
-			std::printf("; found a good entry in %zu iterations", iterations);
+			// std::printf("; found a good entry in %zu iterations", iterations);
 		}
 
-		std::printf("; best entry offset: %.16f, atan2: %.8f, fs: %hd, %hd\n", std::fabs(best_match_it->r - difference), std::atan2(-best_match_it->S, best_match_it->F), best_match_it->F, best_match_it->S);
+		// std::printf("; best entry offset: %.16f, atan2: %.8f, fs: %hd, %hd\n", std::fabs(best_match_it->r - difference), std::atan2(-best_match_it->S, best_match_it->F), best_match_it->F, best_match_it->S);
 
 		return *best_match_it;
 	}
