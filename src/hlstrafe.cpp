@@ -519,6 +519,10 @@ namespace HLStrafe
 					static_cast<int>(curState.Parameters.Parameters.YawRange.HighestYaw * M_INVU_DEG)
 				);
 			} break;
+
+			default:
+				assert(false);
+				break;
 		}
 	}
 
