@@ -52,6 +52,8 @@ namespace VCT
 			/// Maximal value for forwardmove and sidemove.
 			constexpr int16_t MAX_MOVE = 2047;
 
+			std::printf("Computing the vectorial compensation table...\n");
+
 			table.clear();
 			maxspeed = vars.Maxspeed;
 
@@ -104,7 +106,7 @@ namespace VCT
 
 			std::sort(table.begin(), table.end());
 
-			std::printf("VCT size: %zu\n", table.size());
+			std::printf("Vectorial compensation table size: %zu\n", table.size());
 		}
 
 		class BestMatchIterator {
