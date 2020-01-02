@@ -200,7 +200,7 @@ namespace VCT
 			                                 [](const Entry& a, const double& b) {
 			                                 	return a.r < b;
 			                                 });
-			
+
 			const auto prev = it - 1;
 
 			if (it == table.cend()) {
