@@ -426,55 +426,63 @@ namespace HLStrafe
 
 	static inline void GetAVec(float yaw, double wishspeed, HLTAS::Button buttons, double avec[2])
 	{
-		float sy = std::sin(yaw * (M_PI * 2 / 360));
-		float cy = std::cos(yaw * (M_PI * 2 / 360));
+		float sy = static_cast<float>(std::sin(yaw * (M_PI * 2 / 360)));
+		float cy = static_cast<float>(std::cos(yaw * (M_PI * 2 / 360)));
 
 		float forward[3] = { cy, sy, 0 };
 		float right[3] = { sy, -cy, 0 };
 
-		float fmove, smove;
+		double fmove_d, smove_d;
 
 		switch (buttons) {
 		case HLTAS::Button::FORWARD:
-			fmove = wishspeed;
-			smove = 0;
+			fmove_d = wishspeed;
+			smove_d = 0;
 			break;
 
 		case HLTAS::Button::BACK:
-			fmove = -wishspeed;
-			smove = 0;
+			fmove_d = -wishspeed;
+			smove_d = 0;
 			break;
 
 		case HLTAS::Button::LEFT:
-			fmove = 0;
-			smove = -wishspeed;
+			fmove_d = 0;
+			smove_d = -wishspeed;
 			break;
 
 		case HLTAS::Button::RIGHT:
-			fmove = 0;
-			smove = wishspeed;
+			fmove_d = 0;
+			smove_d = wishspeed;
 			break;
 
 		case HLTAS::Button::FORWARD_RIGHT:
-			fmove = wishspeed / std::sqrt(2.0);
-			smove = wishspeed / std::sqrt(2.0);
+			fmove_d = wishspeed / std::sqrt(2.0);
+			smove_d = wishspeed / std::sqrt(2.0);
 			break;
 
 		case HLTAS::Button::FORWARD_LEFT:
-			fmove = wishspeed / std::sqrt(2.0);
-			smove = -wishspeed / std::sqrt(2.0);
+			fmove_d = wishspeed / std::sqrt(2.0);
+			smove_d = -wishspeed / std::sqrt(2.0);
 			break;
 
 		case HLTAS::Button::BACK_RIGHT:
-			fmove = -wishspeed / std::sqrt(2.0);
-			smove = wishspeed / std::sqrt(2.0);
+			fmove_d = -wishspeed / std::sqrt(2.0);
+			smove_d = wishspeed / std::sqrt(2.0);
 			break;
 
 		case HLTAS::Button::BACK_LEFT:
-			fmove = -wishspeed / std::sqrt(2.0);
-			smove = -wishspeed / std::sqrt(2.0);
+			fmove_d = -wishspeed / std::sqrt(2.0);
+			smove_d = -wishspeed / std::sqrt(2.0);
 			break;
+
+		default:
+			assert(false);
+			avec[0] = 0;
+			avec[1] = 0;
+			return;
 		}
+
+		float fmove = static_cast<float>(fmove_d), smove = static_cast<float>(smove_d);
 
 		float wishvel[2] = { forward[0] * fmove + right[0] * smove, forward[1] * fmove + right[1] * smove };
 		Normalize<float, 2>(wishvel, wishvel);
@@ -522,7 +530,7 @@ namespace HLStrafe
 
 			default:
 				assert(false);
-				break;
+				return VCT::AngleConstraints(0, 0);
 		}
 	}
 
@@ -578,7 +586,7 @@ namespace HLStrafe
 
 			// More accurate acceleration vector prediction.
 			if (version >= 2)
-				GetAVec(yaws[0] * M_RAD2DEG, wishspeed, usedButton, avec);
+				GetAVec(static_cast<float>(yaws[0] * M_RAD2DEG), wishspeed, usedButton, avec);
 
 			PlayerData pl = player;
 			VectorFME(pl, vars, postype, wishspeed, avec);
@@ -589,7 +597,7 @@ namespace HLStrafe
 
 			// More accurate acceleration vector prediction.
 			if (version >= 2)
-				GetAVec(yaws[1] * M_RAD2DEG, wishspeed, usedButton, avec);
+				GetAVec(static_cast<float>(yaws[1] * M_RAD2DEG), wishspeed, usedButton, avec);
 
 			VecCopy<float, 2>(player.Velocity, pl.Velocity);
 			VectorFME(pl, vars, postype, wishspeed, avec);

@@ -76,7 +76,7 @@ namespace HLStrafe
 			return;
 
 		for (std::size_t i = 0; i < size; ++i)
-			out[i] = vec[i] / len;
+			out[i] = static_cast<T>(vec[i] / len);
 	}
 
 	template<typename T1, typename T2, std::size_t size = 3>
