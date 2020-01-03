@@ -604,7 +604,7 @@ namespace HLStrafe
 				VecCopy<float, 2>(curState.LastVelocity, avg_vel);
 				VecAdd<float, float, 2>(avg_vel, player.Velocity, avg_vel);
 
-				if (!IsZero(avg_vel))
+				if (!IsZero<float, 2>(avg_vel))
 					vel_yaw_for_constraints = Atan2(avg_vel[1], avg_vel[0]);
 			}
 
