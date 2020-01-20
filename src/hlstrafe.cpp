@@ -212,6 +212,8 @@ namespace HLStrafe
 						fractions[0] = 1;
 				} else {
 					// Figure out the end position when trying to walk up a step.
+					VecCopy<float, 3>(player.Origin, dest);
+
 					auto playerUp = PlayerData(player);
 					dest[2] += vars.Stepsize;
 					tr = traceFunc(playerUp.Origin, dest, (player.Ducking) ? HullType::DUCKED : HullType::NORMAL);
