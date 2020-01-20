@@ -265,6 +265,9 @@ namespace HLStrafe
 			CheckVelocity(player, vars);
 		}
 
+		if (postype == PositionType::GROUND)
+			player.Velocity[2] = 0;
+
 		return postype;
 	}
 
