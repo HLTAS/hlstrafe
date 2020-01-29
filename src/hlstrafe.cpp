@@ -1730,6 +1730,68 @@ namespace HLStrafe
 
 		out.NextFrameIs0ms = false;
 
+		float yaw = static_cast<float>(NormalizeDeg(out.Yaw));
+		if (curState.ChangeYawOver > 0) {
+			float targetValue = static_cast<float>(NormalizeDeg(curState.ChangeYawFinalValue));
+			float difference = static_cast<float>(GetAngleDifference(yaw, targetValue));
+
+			float changeRate = difference / curState.ChangeYawOver;
+			curState.ChangeYawOver = std::max(0.f, curState.ChangeYawOver - vars.Frametime);
+
+			if (curState.ChangeYawOver == 0)
+				out.Yaw = curState.ChangeYawFinalValue;
+			else
+				out.Yaw = yaw + vars.Frametime * changeRate;
+		}
+		if (curState.ChangePitchOver > 0) {
+			float changeRate = (curState.ChangePitchFinalValue - out.Pitch) / curState.ChangePitchOver;
+			curState.ChangePitchOver = std::max(0.f, curState.ChangePitchOver - vars.Frametime);
+
+			if (curState.ChangePitchOver == 0)
+				out.Pitch = curState.ChangePitchFinalValue;
+			else
+				out.Pitch += vars.Frametime * changeRate;
+		}
+		if (curState.ChangeTargetYawOver > 0) {
+			double constraints = 0;
+
+			switch (curState.Parameters.Type) {
+				case HLTAS::ConstraintsType::VELOCITY:
+					constraints = curState.Parameters.Parameters.Velocity.Constraints;
+					break;
+				case HLTAS::ConstraintsType::VELOCITY_AVG:
+					constraints = curState.Parameters.Parameters.VelocityAvg.Constraints;
+					break;
+				case HLTAS::ConstraintsType::YAW:
+					constraints = curState.Parameters.Parameters.Yaw.Constraints;
+					break;
+				case HLTAS::ConstraintsType::YAW_RANGE:
+					constraints = 0.1;
+					break;
+				default:
+					assert(false);
+					break;
+			}
+
+			curState.Parameters.Type = HLTAS::ConstraintsType::YAW;
+			curState.Parameters.Parameters.Yaw.Yaw = yaw;
+			curState.Parameters.Parameters.Yaw.Constraints = constraints;
+
+			float targetValue = static_cast<float>(NormalizeDeg(curState.ChangeTargetYawFinalValue));
+			float difference = static_cast<float>(GetAngleDifference(yaw, targetValue));
+
+			float changeRate = difference / curState.ChangeTargetYawOver;
+			curState.ChangeTargetYawOver = std::max(0.f, curState.ChangeTargetYawOver - vars.Frametime);
+
+			float newValue;
+			if (curState.ChangeTargetYawOver == 0)
+				newValue = curState.ChangeTargetYawFinalValue;
+			else
+				newValue = yaw + vars.Frametime * changeRate;
+
+			curState.Parameters.Parameters.Yaw.Yaw = newValue;
+		}
+
 		if (frame.PitchPresent)
 			out.Pitch = static_cast<float>(frame.GetPitch());
 		if (!frame.Strafe && frame.GetYawPresent())
@@ -1799,7 +1861,11 @@ namespace HLStrafe
 		//EngineMsg("p po %f\t%f\t%f\t%f\t%f\t%f\n", playerCopy.Origin[0], playerCopy.Origin[1], playerCopy.Origin[2], playerCopy.Velocity[0], playerCopy.Velocity[1], playerCopy.Velocity[2]);
 		curState.Jump = out.Jump;
 		curState.Duck = out.Duck;
+
+		playerCopy.Viewangles[0] = out.Pitch;
+		playerCopy.Viewangles[1] = out.Yaw;
 		out.NewPlayerData = playerCopy;
+
 		VecCopy<float, 2>(player.Velocity, curState.LastVelocity);
 		return out;
 	}
