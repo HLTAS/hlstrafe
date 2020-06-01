@@ -1,11 +1,13 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <optional>
 #include <sstream>
 
 #include "hlstrafe.hpp"
 #include "util.hpp"
 #include "vct.hpp"
+#include "vct_exact_angle.hpp"
 
 // #include "../../SPTLib/sptlib.hpp"
 
@@ -496,6 +498,36 @@ namespace HLStrafe
 		avec[1] = wishvel[1];
 	}
 
+	static inline std::optional<uint16_t> ExactAngleConstraints(double vel_yaw, const CurrentState& curState)
+	{
+		switch (curState.Parameters.Type) {
+			case HLTAS::ConstraintsType::VELOCITY:
+			case HLTAS::ConstraintsType::VELOCITY_AVG:
+			{
+				if (curState.Parameters.Parameters.Velocity.Constraints == 0)
+					return std::optional(static_cast<uint16_t>(vel_yaw * M_INVU_RAD));
+			} break;
+
+			case HLTAS::ConstraintsType::YAW:
+			{
+				if (curState.Parameters.Parameters.Yaw.Constraints == 0)
+					return std::optional(static_cast<uint16_t>(curState.Parameters.Parameters.Yaw.Yaw * M_INVU_DEG));
+			} break;
+
+			case HLTAS::ConstraintsType::YAW_RANGE:
+			{
+				if (curState.Parameters.Parameters.YawRange.HighestYaw == curState.Parameters.Parameters.YawRange.LowestYaw)
+					return std::optional(static_cast<uint16_t>(curState.Parameters.Parameters.YawRange.LowestYaw * M_INVU_DEG));
+			} break;
+
+			default:
+				assert(false);
+				break;
+		}
+
+		return std::optional<uint16_t>();
+	}
+
 	static inline VCT::AngleConstraints ComputeConstraints(double vel_yaw, const CurrentState& curState)
 	{
 		switch (curState.Parameters.Type) {
@@ -621,16 +653,28 @@ namespace HLStrafe
 					vel_yaw_for_constraints = Atan2(avg_vel[1], avg_vel[0]);
 			}
 
-			const auto constraints = ComputeConstraints(vel_yaw_for_constraints, curState);
-			const auto vector = VCT::GetBestVector(vars, vel_yaw + theta, constraints);
-
-			// Compute the player yaw.
-			// Make sure both angles are anglemodded correctly.
 			auto target_angle = NormalizeRad(vel_yaw + theta);
 			if (target_angle < 0)
 				target_angle += 2 * M_PI;
 
-			auto fs_angle = NormalizeRad(Atan2(-vector.S, vector.F));
+			const auto exact_angle_constraints = ExactAngleConstraints(vel_yaw_for_constraints, curState);
+			const auto constraints = ComputeConstraints(vel_yaw_for_constraints, curState);
+
+			int16_t F, S;
+			if (exact_angle_constraints) {
+				const auto player_yaw = *exact_angle_constraints * M_U_RAD;
+				const auto& entry = VCTExactAngle::GetBestVector(vars, target_angle - player_yaw);
+				F = entry.F;
+				S = entry.S;
+			} else {
+				const auto& entry = VCT::GetBestVector(vars, vel_yaw + theta, constraints);
+				F = entry.F;
+				S = entry.S;
+			}
+
+			// Compute the player yaw.
+			// Make sure both angles are anglemodded correctly.
+			auto fs_angle = NormalizeRad(Atan2(-S, F));
 			if (fs_angle < 0)
 				fs_angle += 2 * M_PI;
 
@@ -648,14 +692,14 @@ namespace HLStrafe
 
 			bool forward, back, left, right;
 
-			forward = vector.F > 0;
-			back = vector.F < 0;
-			right = vector.S > 0;
-			left = vector.S < 0;
+			forward = F > 0;
+			back = F < 0;
+			right = S > 0;
+			left = S < 0;
 
-			out.Forwardspeed = static_cast<float>(forward ? vector.F : 0);
-			out.Backspeed = static_cast<float>(back ? -vector.F : 0);
-			out.Sidespeed = static_cast<float>(std::abs(vector.S));
+			out.Forwardspeed = static_cast<float>(forward ? F : 0);
+			out.Backspeed = static_cast<float>(back ? -F : 0);
+			out.Sidespeed = static_cast<float>(std::abs(S));
 
 			if (forward) {
 				if (left)
