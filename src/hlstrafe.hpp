@@ -101,7 +101,9 @@ namespace HLStrafe
 			ChangePitchFinalValue(0),
 			ChangePitchOver(0),
 			ChangeTargetYawFinalValue(0),
-			ChangeTargetYawOver(0)
+			ChangeTargetYawOver(0),
+			LockYawToTargetYaw(false),
+			LockTargetYaw(0)
 		{};
 
 		bool Jump;
@@ -132,6 +134,9 @@ namespace HLStrafe
 		float ChangePitchOver;
 		float ChangeTargetYawFinalValue;
 		float ChangeTargetYawOver;
+
+		bool LockYawToTargetYaw; // Used for velocity_lock target yaw.
+		double LockTargetYaw; // Only valid if LockYawToTargetYaw == true.
 	};
 
 	struct TraceResult {
@@ -224,7 +229,7 @@ namespace HLStrafe
 	void Dbg(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc, unsigned version);
 	void LgagstDucktap(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc, unsigned version);
 	void LgagstJump(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc, unsigned version);
-	PositionType Strafe(PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, bool predictOrigin, const CurrentState& curState, TraceFunc traceFunc, unsigned version, float fractions[4] = nullptr, float normalzs[4] = nullptr);
+	PositionType Strafe(PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, bool predictOrigin, CurrentState& curState, TraceFunc traceFunc, unsigned version, float fractions[4] = nullptr, float normalzs[4] = nullptr);
 
 	/*
 		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
@@ -319,13 +324,13 @@ namespace HLStrafe
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
 	double SideStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, bool right, const CurrentState& curState, ProcessedFrame& out, unsigned version);
+		double vel_yaw, bool right, CurrentState& curState, ProcessedFrame& out, unsigned version);
 	double SideStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, bool right, const CurrentState& curState, ProcessedFrame& out, unsigned version);
+		double vel_yaw, bool right, CurrentState& curState, ProcessedFrame& out, unsigned version);
 	double SideStrafeMaxDeccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, bool right, bool& strafed, const CurrentState& curState, ProcessedFrame& out, unsigned version);
+		double vel_yaw, bool right, bool& strafed, CurrentState& curState, ProcessedFrame& out, unsigned version);
 	double SideStrafeConstSpeed(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, bool right, const CurrentState& curState, ProcessedFrame& out, unsigned version);
+		double vel_yaw, bool right, CurrentState& curState, ProcessedFrame& out, unsigned version);
 
 	/*
 		Finds the best yaw to use for the corresponding strafe type taking the anglemod compensation into account, then
@@ -339,13 +344,13 @@ namespace HLStrafe
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
 	double BestStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, const CurrentState& curState, ProcessedFrame& out, unsigned version);
+		double vel_yaw, CurrentState& curState, ProcessedFrame& out, unsigned version);
 	double BestStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, const CurrentState& curState, ProcessedFrame& out, unsigned version);
+		double vel_yaw, CurrentState& curState, ProcessedFrame& out, unsigned version);
 	double BestStrafeMaxDeccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, bool& strafed, const CurrentState& curState, ProcessedFrame& out, unsigned version);
+		double vel_yaw, bool& strafed, CurrentState& curState, ProcessedFrame& out, unsigned version);
 	double BestStrafeConstSpeed(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, const CurrentState& curState, ProcessedFrame& out, unsigned version);
+		double vel_yaw, CurrentState& curState, ProcessedFrame& out, unsigned version);
 
 	/*
 		Finds the best yaw to use for the corresponding strafe type taking the anglemod compensation into account, then
@@ -359,13 +364,13 @@ namespace HLStrafe
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
 	double YawStrafeMaxAccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, double yaw, const CurrentState& curState, ProcessedFrame& out, unsigned version);
+		double vel_yaw, double yaw, CurrentState& curState, ProcessedFrame& out, unsigned version);
 	double YawStrafeMaxAngle(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, double yaw, const CurrentState& curState, ProcessedFrame& out, unsigned version);
+		double vel_yaw, double yaw, CurrentState& curState, ProcessedFrame& out, unsigned version);
 	double YawStrafeMaxDeccel(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, double yaw, const CurrentState& curState, ProcessedFrame& out, bool& strafed, unsigned version);
+		double vel_yaw, double yaw, CurrentState& curState, ProcessedFrame& out, bool& strafed, unsigned version);
 	double YawStrafeConstSpeed(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, double yaw, const CurrentState& curState, ProcessedFrame& out, unsigned version);
+		double vel_yaw, double yaw, CurrentState& curState, ProcessedFrame& out, unsigned version);
 
 	/*
 		Finds the best yaw to use for the given strafe type taking the anglemod compensation into account, then
@@ -380,5 +385,5 @@ namespace HLStrafe
 			Frametime, Accelerate or Airaccelerate, EntFriction.
 	*/
 	double PointStrafe(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, HLTAS::Button& usedButton,
-		double vel_yaw, HLTAS::StrafeType type, double point[2], bool& strafed, const CurrentState& curState, ProcessedFrame& out, unsigned version);
+		double vel_yaw, HLTAS::StrafeType type, double point[2], bool& strafed, CurrentState& curState, ProcessedFrame& out, unsigned version);
 }
