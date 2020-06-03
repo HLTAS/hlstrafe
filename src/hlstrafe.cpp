@@ -502,9 +502,14 @@ namespace HLStrafe
 	{
 		switch (curState.Parameters.Type) {
 			case HLTAS::ConstraintsType::VELOCITY:
-			case HLTAS::ConstraintsType::VELOCITY_AVG:
 			{
 				if (curState.Parameters.Parameters.Velocity.Constraints == 0)
+					return std::optional(static_cast<uint16_t>(vel_yaw * M_INVU_RAD));
+			} break;
+
+			case HLTAS::ConstraintsType::VELOCITY_AVG:
+			{
+				if (curState.Parameters.Parameters.VelocityAvg.Constraints == 0)
 					return std::optional(static_cast<uint16_t>(vel_yaw * M_INVU_RAD));
 			} break;
 
@@ -532,7 +537,6 @@ namespace HLStrafe
 	{
 		switch (curState.Parameters.Type) {
 			case HLTAS::ConstraintsType::VELOCITY:
-			case HLTAS::ConstraintsType::VELOCITY_AVG:
 			{
 				if (curState.Parameters.Parameters.Velocity.Constraints >= 180)
 					return VCT::AngleConstraints(0, 65535);
@@ -540,6 +544,17 @@ namespace HLStrafe
 				return VCT::AngleConstraints(
 					static_cast<int>((vel_yaw - curState.Parameters.Parameters.Velocity.Constraints * M_DEG2RAD) * M_INVU_RAD),
 					static_cast<int>(std::ceil((vel_yaw + curState.Parameters.Parameters.Velocity.Constraints * M_DEG2RAD) * M_INVU_RAD))
+				);
+			} break;
+
+			case HLTAS::ConstraintsType::VELOCITY_AVG:
+			{
+				if (curState.Parameters.Parameters.VelocityAvg.Constraints >= 180)
+					return VCT::AngleConstraints(0, 65535);
+
+				return VCT::AngleConstraints(
+					static_cast<int>((vel_yaw - curState.Parameters.Parameters.VelocityAvg.Constraints * M_DEG2RAD) * M_INVU_RAD),
+					static_cast<int>(std::ceil((vel_yaw + curState.Parameters.Parameters.VelocityAvg.Constraints * M_DEG2RAD) * M_INVU_RAD))
 				);
 			} break;
 
