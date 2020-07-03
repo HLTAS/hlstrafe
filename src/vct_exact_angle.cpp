@@ -92,7 +92,7 @@ namespace VCTExactAngle
 		}
 	}
 
-	const Entry& GetBestVector(const MovementVars& vars, double accel_angle) {
+	const Entry& GetBestVector(const MovementVars& vars, double accel_angle, unsigned version) {
 		std::lock_guard<std::mutex> table_guard(table_mutex);
 
 		// Regenerate the VCT if needed,
@@ -114,7 +114,16 @@ namespace VCTExactAngle
 
 		const auto prev = it - 1;
 
-		if (it == table.cend()) {
+		if (it == table.cbegin()) {
+			if (version < 3) {
+				// Previous HLStrafe versions had a bug where they returned a reference to the item
+				// before the start of the table, which happened to equal to zeros.
+				static Entry zero(0, 0);
+				return zero;
+			}
+
+			return *it;
+		} else if (it == table.cend()) {
 			return *prev;
 		} else {
 			const auto dif1 = it->angle - accel_angle;

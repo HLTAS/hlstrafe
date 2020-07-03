@@ -35,9 +35,10 @@ namespace VCTExactAngle
 	 *
 	 * @param vars Movement variables, only Maxspeed is used
 	 * @param accel_angle Desired acceleration vector angle, relative to the player angle
+	 * @param version HLStrafe version
 	 * @return The optimal VCT entry.
 	 */
-	const Entry& GetBestVector(const MovementVars& vars, double accel_angle);
+	const Entry& GetBestVector(const MovementVars& vars, double accel_angle, unsigned version);
 } // VCTExactAngle
 
 } // HLStrafe

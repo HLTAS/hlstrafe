@@ -698,7 +698,7 @@ namespace HLStrafe
 			int16_t F, S;
 			if (exact_angle_constraints) {
 				const auto player_yaw = *exact_angle_constraints * M_U_RAD;
-				const auto& entry = VCTExactAngle::GetBestVector(vars, target_angle - player_yaw);
+				const auto& entry = VCTExactAngle::GetBestVector(vars, target_angle - player_yaw, version);
 				F = entry.F;
 				S = entry.S;
 			} else {
