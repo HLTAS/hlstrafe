@@ -112,8 +112,6 @@ namespace VCTExactAngle
 		                                    return a.angle < b;
 		                                 });
 
-		const auto prev = it - 1;
-
 		if (it == table.cbegin()) {
 			if (version < 3) {
 				// Previous HLStrafe versions had a bug where they returned a reference to the item
@@ -123,7 +121,11 @@ namespace VCTExactAngle
 			}
 
 			return *it;
-		} else if (it == table.cend()) {
+		}
+
+		const auto prev = it - 1;
+
+		if (it == table.cend()) {
 			return *prev;
 		} else {
 			const auto dif1 = it->angle - accel_angle;
