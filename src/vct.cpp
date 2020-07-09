@@ -1,9 +1,9 @@
 #include <algorithm>
+#include <array>
 #include <cmath>
 // Temporary, for debug printfs
 #include <cstdio>
 #include <mutex>
-#include <vector>
 
 #include "hlstrafe.hpp"
 #include "util.hpp"
@@ -16,9 +16,14 @@ namespace VCT
 {
 	namespace
 	{
+		// This used to be a vector, but filling such a large vector of values causes heap
+		// corruption on WON DLLs seemingly caused by some bug in Half-Life itself. Using an array
+		// of known largest size avoids the heap allocations and hence triggering the bug.
+
 		/// The vectorial compensation table itself.
-		/// This vector is sorted by entry.r.
-		std::vector<Entry> table;
+		/// This array is sorted by entry.r.
+		std::array<Entry, 10196496> table;
+		size_t table_size = 0;
 
 		/// Mutex for accessing the table.
 		std::mutex table_mutex;
@@ -36,15 +41,15 @@ namespace VCT
 
 			entry.F = -S;
 			entry.S = F;
-			table.push_back(entry);
+			table[table_size++] = entry;
 
 			entry.F = -F;
 			entry.S = -S;
-			table.push_back(entry);
+			table[table_size++] = entry;
 
 			entry.F = S;
 			entry.S = -F;
-			table.push_back(entry);
+			table[table_size++] = entry;
 		}
 
 		/// Generate the VCT. Only Maxspeed is needed from vars.
@@ -54,7 +59,7 @@ namespace VCT
 
 			std::printf("Computing the vectorial compensation table...\n");
 
-			table.clear();
+			table_size = 0;
 			maxspeed = vars.Maxspeed;
 
 			int16_t F = 0;
@@ -86,27 +91,32 @@ namespace VCT
 
 				double phi = 2 * M_PI - std::atan(static_cast<double>(S) / F);
 				entry.r = phi - AngleModRad(phi);
-				table.push_back(entry);
+				table[table_size++] = entry;
 				AddRotations(entry);
 
 				entry.r = (entry.r == 0.0 ? 0.0 : M_U_RAD - entry.r);
 				std::swap(entry.F, entry.S);
-				table.push_back(entry);
+				table[table_size++] = entry;
 				AddRotations(entry);
 			}
 
 			// Add 0 and PI / 4 angles omitted in the loop above.
 			entry = Entry { 0.0, 0, 2047 };
-			table.push_back(entry);
+			table[table_size++] = entry;
 			AddRotations(entry);
 
 			entry.F = 2047;
-			table.push_back(entry);
+			table[table_size++] = entry;
 			AddRotations(entry);
 
-			std::sort(table.begin(), table.end());
+			std::sort(table.begin(), table.begin() + table_size);
 
-			std::printf("Vectorial compensation table size: %zu\n", table.size());
+			std::printf("Vectorial compensation table size: %zu\n", table_size);
+
+			if (table_size > table.size()) {
+				std::printf("ERROR: got bigger table size than expected!\n");
+				std::abort();
+			}
 		}
 
 		class BestMatchIterator {
@@ -117,30 +127,30 @@ namespace VCT
 				: low(start)
 				, high(start)
 				, difference(difference) {
-				if (high != table.cend())
+				if (high != (table.cbegin() + table_size))
 					++high;
 
 				if (low != table.cbegin())
 					--low;
 				else
-					low = table.cend();
+					low = table.begin() + table_size;
 			}
 
 			bool HasNext() const {
-				return low != table.cend() || high != table.cend();
+				return low != (table.cbegin() + table_size) || high != (table.cbegin() + table_size);
 			}
 
 			It Next() {
-				if (high == table.cend()) {
+				if (high == (table.cbegin() + table_size)) {
 					const auto rv = low;
 
 					if (low == table.cbegin())
-						low = table.cend();
+						low = (table.cbegin() + table_size);
 					else
 						--low;
 
 					return rv;
-				} else if (low == table.cend()) {
+				} else if (low == (table.cbegin() + table_size)) {
 					return high++;
 				} else {
 					// Both high and low are valid.
@@ -154,7 +164,7 @@ namespace VCT
 						const auto rv = low;
 
 						if (low == table.cbegin())
-							low = table.cend();
+							low = (table.cbegin() + table_size);
 						else
 							--low;
 
@@ -176,7 +186,7 @@ namespace VCT
 		std::lock_guard<std::mutex> table_guard(table_mutex);
 
 		// Regenerate the VCT if needed,
-		if (table.empty() // so either the table is empty,
+		if (table_size == 0 // so either the table is empty,
 			|| (maxspeed != vars.Maxspeed // or the maxspeed is different and above the cap
 				&& (maxspeed > MAXSPEED_VCT_CAP || vars.Maxspeed > MAXSPEED_VCT_CAP)))
 			ComputeVCT(vars);
@@ -197,7 +207,7 @@ namespace VCT
 		// Find best matching entry, unconstrained.
 		if (difference > 0) {
 			const auto it = std::lower_bound(table.cbegin(),
-			                                 table.cend(),
+			                                 (table.cbegin() + table_size),
 			                                 difference,
 			                                 [](const Entry& a, const double& b) {
 			                                 	return a.r < b;
@@ -205,7 +215,7 @@ namespace VCT
 
 			const auto prev = it - 1;
 
-			if (it == table.cend()) {
+			if (it == (table.cbegin() + table_size)) {
 				best_match_it = prev;
 			} else if (difference == it->r) {
 				best_match_it = it;

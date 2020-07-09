@@ -1,9 +1,9 @@
 #include <algorithm>
+#include <array>
 #include <cmath>
 // Temporary, for debug printfs
 #include <cstdio>
 #include <mutex>
-#include <vector>
 
 #include "hlstrafe.hpp"
 #include "util.hpp"
@@ -16,9 +16,14 @@ namespace VCTExactAngle
 {
 	namespace
 	{
+		// This used to be a vector, but filling such a large vector of values causes heap
+		// corruption on WON DLLs seemingly caused by some bug in Half-Life itself. Using an array
+		// of known largest size avoids the heap allocations and hence triggering the bug.
+
 		/// The vectorial compensation table itself.
-		/// This vector is sorted by entry.angle.
-		std::vector<Entry> table;
+		/// This array is sorted by entry.angle.
+		std::array<Entry, 10196504> table;
+		size_t table_size = 0;
 
 		/// Mutex for accessing the table.
 		std::mutex table_mutex;
@@ -31,15 +36,15 @@ namespace VCTExactAngle
 
 		/// Add all 8 combinations of F and S into the table.
 		void AddCombinations(int16_t F, int16_t S) {
-			table.push_back(Entry( F,  S));
-			table.push_back(Entry( F, -S));
-			table.push_back(Entry(-F,  S));
-			table.push_back(Entry(-F, -S));
+			table[table_size++] = Entry( F,  S);
+			table[table_size++] = Entry( F, -S);
+			table[table_size++] = Entry(-F,  S);
+			table[table_size++] = Entry(-F, -S);
 
-			table.push_back(Entry( S,  F));
-			table.push_back(Entry( S, -F));
-			table.push_back(Entry(-S,  F));
-			table.push_back(Entry(-S, -F));
+			table[table_size++] = Entry( S,  F);
+			table[table_size++] = Entry( S, -F);
+			table[table_size++] = Entry(-S,  F);
+			table[table_size++] = Entry(-S, -F);
 		}
 
 		/// Generate the VCT. Only Maxspeed is needed from vars.
@@ -49,7 +54,7 @@ namespace VCTExactAngle
 
 			std::printf("Computing the vectorial compensation table...\n");
 
-			table.clear();
+			table_size = 0;
 			maxspeed = vars.Maxspeed;
 
 			// Compute the Farey sequence in ascending order, starting from 0 / 1 and 1 / MAX_MOVE.
@@ -86,9 +91,14 @@ namespace VCTExactAngle
 			AddCombinations(0, 2047);
 			AddCombinations(2047, 2047);
 
-			std::sort(table.begin(), table.end());
+			std::sort(table.begin(), (table.begin() + table_size));
 
-			std::printf("Vectorial compensation table size: %zu\n", table.size());
+			std::printf("Vectorial compensation table size: %zu\n", table_size);
+
+			if (table_size > table.size()) {
+				std::printf("ERROR: got bigger table size than expected!\n");
+				std::abort();
+			}
 		}
 	}
 
@@ -96,7 +106,7 @@ namespace VCTExactAngle
 		std::lock_guard<std::mutex> table_guard(table_mutex);
 
 		// Regenerate the VCT if needed,
-		if (table.empty() // so either the table is empty,
+		if (table_size == 0 // so either the table is empty,
 			|| (maxspeed != vars.Maxspeed // or the maxspeed is different and above the cap
 				&& (maxspeed > MAXSPEED_VCT_CAP || vars.Maxspeed > MAXSPEED_VCT_CAP)))
 			ComputeVCT(vars);
@@ -106,7 +116,7 @@ namespace VCTExactAngle
 		accel_angle = NormalizeRad(accel_angle);
 
 		const auto it = std::lower_bound(table.cbegin(),
-		                                 table.cend(),
+		                                 (table.cbegin() + table_size),
 		                                 accel_angle,
 		                                 [](const Entry& a, const double& b) {
 		                                    return a.angle < b;
@@ -125,7 +135,7 @@ namespace VCTExactAngle
 
 		const auto prev = it - 1;
 
-		if (it == table.cend()) {
+		if (it == (table.cbegin() + table_size)) {
 			return *prev;
 		} else {
 			const auto dif1 = it->angle - accel_angle;

@@ -19,6 +19,8 @@ namespace VCTExactAngle
 		/// Angle of the [F, S] vector.
 		double angle;
 
+		Entry() = default;
+
 		Entry(int16_t F, int16_t S)
 			: F(F)
 			, S(S)
