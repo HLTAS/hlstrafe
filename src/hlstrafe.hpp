@@ -103,7 +103,9 @@ namespace HLStrafe
 			ChangeTargetYawFinalValue(0),
 			ChangeTargetYawOver(0),
 			LockYawToTargetYaw(false),
-			LockTargetYaw(0)
+			LockTargetYaw(0),
+			TargetYawOverrideActive(false),
+			TargetYawOverride(0)
 		{};
 
 		bool Jump;
@@ -137,6 +139,9 @@ namespace HLStrafe
 
 		bool LockYawToTargetYaw; // Used for velocity_lock target yaw.
 		double LockTargetYaw; // Only valid if LockYawToTargetYaw == true.
+
+		bool TargetYawOverrideActive;
+		double TargetYawOverride;
 	};
 
 	struct TraceResult {

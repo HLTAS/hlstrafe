@@ -500,6 +500,9 @@ namespace HLStrafe
 
 	static inline std::optional<uint16_t> ExactAngleConstraints(double vel_yaw, const CurrentState& curState)
 	{
+		if (curState.TargetYawOverrideActive)
+			return std::optional(static_cast<uint16_t>(curState.TargetYawOverride * M_INVU_DEG));
+
 		switch (curState.Parameters.Type) {
 			case HLTAS::ConstraintsType::VELOCITY:
 			{
@@ -541,6 +544,12 @@ namespace HLStrafe
 
 	static inline VCT::AngleConstraints ComputeConstraints(double vel_yaw, const CurrentState& curState)
 	{
+		if (curState.TargetYawOverrideActive)
+			return VCT::AngleConstraints(
+				static_cast<int>(curState.TargetYawOverride * M_INVU_DEG),
+				static_cast<int>(curState.TargetYawOverride * M_INVU_DEG)
+			);
+
 		switch (curState.Parameters.Type) {
 			case HLTAS::ConstraintsType::VELOCITY:
 			{
@@ -1949,6 +1958,9 @@ namespace HLStrafe
 			out.Pitch = static_cast<float>(frame.GetPitch());
 		if (!frame.Strafe && frame.GetYawPresent())
 			out.Yaw = static_cast<float>(AngleModDeg(frame.GetYaw()));
+
+		if (curState.TargetYawOverrideActive)
+			out.Yaw = static_cast<float>(AngleModDeg(curState.TargetYawOverride));
 
 		if (frame.Autojump)
 			curState.AutojumpsLeft = frame.GetAutojumpTimes();
