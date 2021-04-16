@@ -5,7 +5,7 @@
 
 namespace HLStrafe
 {
-	const unsigned MAX_SUPPORTED_VERSION = 3;
+	const unsigned MAX_SUPPORTED_VERSION = 4;
 
 	struct PlayerData {
 		float Origin[3];
