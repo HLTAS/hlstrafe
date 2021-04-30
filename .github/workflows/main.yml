@@ -5,34 +5,34 @@ on:
   pull_request:
   schedule:
     - cron: '0 0 1 * *' # Monthly
+  workflow_dispatch:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
 
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
 
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
     steps:
-    - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
-    - name: Fetch submodules
-      run: git submodule update --init --recursive
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
 
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
+      - name: Generate the build system
+        run: cmake -B build
 
-    - name: Generate the build system
-      run: |
-        mkdir build
-        cd build
-        cmake ..
-
-    - name: Build
-      run: cmake --build build
+      - name: Build
+        working-directory: build
+        run: cmake --build .
