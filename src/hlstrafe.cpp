@@ -1769,6 +1769,30 @@ namespace HLStrafe
 			}
 				break;
 
+			case HLTAS::StrafeDir::LEFT_RIGHT:
+			case HLTAS::StrafeDir::RIGHT_LEFT:
+			{
+				if (curState.StrafeCycleFrameCount >= frame.GetCount() * 2)
+					curState.StrafeCycleFrameCount = 0;
+
+				bool right = (curState.StrafeCycleFrameCount++ / frame.GetCount()) > 0;
+				if (frame.GetDir() == HLTAS::StrafeDir::RIGHT_LEFT)
+					right = !right;
+
+				if (frame.GetType() == HLTAS::StrafeType::MAXACCEL)
+					out.Yaw = static_cast<float>(SideStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, right, curState, out, version) * M_RAD2DEG);
+				else if (frame.GetType() == HLTAS::StrafeType::MAXANGLE)
+					out.Yaw = static_cast<float>(SideStrafeMaxAngle(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, right, curState, out, version) * M_RAD2DEG);
+				else if (frame.GetType() == HLTAS::StrafeType::CONSTSPEED)
+					out.Yaw = static_cast<float>(SideStrafeConstSpeed(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, right, curState, out, version) * M_RAD2DEG);
+				else if (frame.GetType() == HLTAS::StrafeType::MAXDECCEL) {
+					auto yaw = static_cast<float>(SideStrafeMaxDeccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, right, strafed, curState, out, version) * M_RAD2DEG);
+					if (strafed)
+						out.Yaw = yaw;
+				}
+			}
+				break;
+
 			default:
 				strafed = false;
 				break;
@@ -1986,6 +2010,11 @@ namespace HLStrafe
 			curState.LgagstFullMaxspeed = frame.GetLgagstFullMaxspeed();
 			curState.LgagstType = frame.Ducktap;
 			curState.LgagstsLeft = frame.GetLgagstTimes();
+		}
+
+		if (!frame.Strafe
+				|| (frame.GetDir() != HLTAS::StrafeDir::LEFT_RIGHT && frame.GetDir() != HLTAS::StrafeDir::RIGHT_LEFT)) {
+			curState.StrafeCycleFrameCount = 0;
 		}
 
 		//EngineMsg("p pr %f\t%f\t%f\t%f\t%f\t%f\n", player.Origin[0], player.Origin[1], player.Origin[2], player.Velocity[0], player.Velocity[1], player.Velocity[2]);

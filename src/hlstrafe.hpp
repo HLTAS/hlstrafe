@@ -105,7 +105,8 @@ namespace HLStrafe
 			LockYawToTargetYaw(false),
 			LockTargetYaw(0),
 			TargetYawOverrideActive(false),
-			TargetYawOverride(0)
+			TargetYawOverride(0),
+			StrafeCycleFrameCount(0)
 		{};
 
 		bool Jump;
@@ -142,6 +143,9 @@ namespace HLStrafe
 
 		bool TargetYawOverrideActive;
 		double TargetYawOverride;
+
+		// Number of frames for LEFT_RIGHT or RIGHT_LEFT which goes from 0 to (count - 1).
+		unsigned StrafeCycleFrameCount;
 	};
 
 	struct TraceResult {
