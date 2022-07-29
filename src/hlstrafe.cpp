@@ -1342,7 +1342,8 @@ namespace HLStrafe
 		}
 
 		if (vars.Bhopcap) {
-			auto maxscaledspeed = SPEED_SCALE * vars.Maxspeed; // exclusive change for cs 1.6, cannot roll back for half life on the go unless doing something more along of "isgamedirmatch" thingy in main bxt
+			// auto maxscaledspeed = 1.2f * vars.Maxspeed; // or the value could be 300 / 320 = 0.9375
+			auto maxscaledspeed = 300.0; // hard coded that works, basically the maxscaled speed does not apply for 
 			if (maxscaledspeed > 0) {
 				auto speed = Length<float, 3>(player.Velocity);
 				if (speed > maxscaledspeed)
