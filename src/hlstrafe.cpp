@@ -9,14 +9,6 @@
 #include "vct.hpp"
 #include "vct_exact_angle.hpp"
 
-#ifdef CS
-#define SPEED_SCALE 1.2f
-#define BHOPCAP_SCALE 0.8
-#else // for normal hl
-#define SPEED_SCALE 1.7f
-#define BHOPCAP_SCALE 0.65
-#endif
-
 // #include "../../SPTLib/sptlib.hpp"
 
 namespace HLStrafe
@@ -1342,19 +1334,13 @@ namespace HLStrafe
 		}
 
 		if (vars.Bhopcap) {
-			// auto maxscaledspeed = 1.2f * vars.Maxspeed; // or the value could be 300 / 320 = 0.9375
-			auto maxscaledspeed = 300.0; // hard coded that works, basically the maxscaled speed does not apply for 
+			auto maxscaledspeed = vars.SpeedScale * vars.Maxspeed;
 			if (maxscaledspeed > 0) {
 				auto speed = Length<float, 3>(player.Velocity);
 				if (speed > maxscaledspeed)
-					VecScale<float, 3>(player.Velocity, (maxscaledspeed / speed) * BHOPCAP_SCALE, player.Velocity);
+					VecScale<float, 3>(player.Velocity, (maxscaledspeed / speed) * vars.BhopcapScale, player.Velocity);
 			}
 		}
-
-		#ifdef CS
-		uint32_t temp = 1151629635; // no idea why there is this uint32 to float, i don't write any code
-		player.StaminaTime = *reinterpret_cast<const float*>(&temp);
-		#endif
 
 		// We don't care about the vertical velocity after the jump prediction.
 		// Except when we need to predict a 0ms frame, then we need the check in Move to correctly
@@ -1365,8 +1351,12 @@ namespace HLStrafe
 				player.Velocity[1] = static_cast<float>(std::sin(player.Viewangles[1] * M_DEG2RAD) * std::cos(player.Viewangles[0] * M_DEG2RAD) * 350 * 1.6);
 			}
 		}
-		player.Velocity[2] = static_cast<float>(std::sqrt(2 * 800 * 45.0));
+		player.Velocity[2] = static_cast<float>(std::sqrt(2 * 800 * 45.0) * ((100.0 - (player.StaminaTime / 1000.0) * 19.0) / 100.0));
+
 		CheckVelocity(player, vars);
+
+		// defaults stamina again
+		player.StaminaTime = 1315.789f;
 
 		return PositionType::AIR;
 	}
@@ -1401,13 +1391,12 @@ namespace HLStrafe
 		auto newspeed = std::max(speed - drop, 0.f);
 		VecScale<float, 3>(player.Velocity, newspeed / speed, player.Velocity);
 		
-		#ifdef CS
-		// WalkMove
+		// From WalkMove
 		VecScale<float, 2>(player.Velocity, (100 - player.StaminaTime / 1000 * 19) / 100, player.Velocity);
-		// Reduce this here since if we're calling Friction then we're predicting something
-		// and most likely will call Friction again and this needs to be correct.
+		// "Reduce this here since if we're calling Friction then we're predicting something
+		// and most likely will call Friction again and this needs to be correct."
+		// that means this does not work yet big TODO
 		player.StaminaTime = std::max(player.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
-		#endif
 	}
 
 	void Ducktap(const PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc)
@@ -2053,16 +2042,10 @@ namespace HLStrafe
 		if (vars.Frametime != 0.f)
 			curState.PredictThis = State0ms::NOTHING;
 
-		bool reduceWishspeed = playerCopy.Ducking
-		#ifdef CS
-		|| playerCopy.InDuckAnimation
-		#endif
-		;
+		bool reduceWishspeed = playerCopy.Ducking || playerCopy.InDuckAnimation;
 		// Same as in ReduceTimers().
 		playerCopy.DuckTime = std::max(playerCopy.DuckTime - static_cast<int>(vars.Frametime * 1000), 0.f);
-		#ifdef CS
 		playerCopy.StaminaTime = std::max(playerCopy.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
-		#endif
 
 		// This order may change.
 		Jumpbug(playerCopy, vars, postype, frame, out, strafeButtons, useGivenButtons, curState, traceFunc, version);

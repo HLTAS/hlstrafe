@@ -3,8 +3,6 @@
 
 #include "hltas.hpp"
 
-#define CS // reemove this to make it just work
-
 namespace HLStrafe
 {
 	const unsigned MAX_SUPPORTED_VERSION = 4;
@@ -18,9 +16,7 @@ namespace HLStrafe
 		bool Ducking;
 		bool InDuckAnimation;
 		float DuckTime;
-		#ifdef CS
 		float StaminaTime;
-		#endif
 
 		bool HasLJModule;
 
@@ -42,6 +38,8 @@ namespace HLStrafe
 		float Stepsize;
 		float Bounce;
 		bool Bhopcap;
+		float BhopcapScale;
+		float SpeedScale;
 	};
 
 	struct ProcessedFrame {
