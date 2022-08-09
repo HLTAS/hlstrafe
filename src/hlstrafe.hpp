@@ -40,6 +40,10 @@ namespace HLStrafe
 		bool Bhopcap;
 		float BhopcapScale;
 		float SpeedScale;
+		bool UseSlow;
+
+		// Non-HL stuffs
+		bool HasStamina;
 	};
 
 	struct ProcessedFrame {

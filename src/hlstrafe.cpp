@@ -1351,12 +1351,15 @@ namespace HLStrafe
 				player.Velocity[1] = static_cast<float>(std::sin(player.Viewangles[1] * M_DEG2RAD) * std::cos(player.Viewangles[0] * M_DEG2RAD) * 350 * 1.6);
 			}
 		}
-		player.Velocity[2] = static_cast<float>(std::sqrt(2 * 800 * 45.0) * ((100.0 - (player.StaminaTime / 1000.0) * 19.0) / 100.0));
+		player.Velocity[2] = static_cast<float>(std::sqrt(2 * 800 * 45.0));
+
+		if (vars.HasStamina) {
+			player.Velocity[2] = static_cast<float>(player.Velocity[2] * ((100.0 - (player.StaminaTime / 1000.0) * 19.0) / 100.0));
+			// defaults stamina again
+			player.StaminaTime = 1315.789429f; // 25000.0f / 19.0f
+		}
 
 		CheckVelocity(player, vars);
-
-		// defaults stamina again
-		player.StaminaTime = 1315.789f;
 
 		return PositionType::AIR;
 	}
@@ -1391,12 +1394,13 @@ namespace HLStrafe
 		auto newspeed = std::max(speed - drop, 0.f);
 		VecScale<float, 3>(player.Velocity, newspeed / speed, player.Velocity);
 		
-		// From WalkMove
-		VecScale<float, 2>(player.Velocity, (100 - player.StaminaTime / 1000 * 19) / 100, player.Velocity);
-		// "Reduce this here since if we're calling Friction then we're predicting something
-		// and most likely will call Friction again and this needs to be correct."
-		// that means this does not work yet big TODO
-		player.StaminaTime = std::max(player.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
+		if (vars.HasStamina) {
+			VecScale<float, 2>(player.Velocity, (100 - player.StaminaTime / 1000 * 19) / 100, player.Velocity);
+			// "Reduce this here since if we're calling Friction then we're predicting something
+			// and most likely will call Friction again and this needs to be correct."
+			// that means this does not work yet big TODO
+			player.StaminaTime = std::max(player.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
+		}
 	}
 
 	void Ducktap(const PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc)
@@ -2042,10 +2046,12 @@ namespace HLStrafe
 		if (vars.Frametime != 0.f)
 			curState.PredictThis = State0ms::NOTHING;
 
-		bool reduceWishspeed = playerCopy.Ducking || playerCopy.InDuckAnimation;
+		bool reduceWishspeed = playerCopy.Ducking || (vars.HasStamina && playerCopy.InDuckAnimation);
 		// Same as in ReduceTimers().
 		playerCopy.DuckTime = std::max(playerCopy.DuckTime - static_cast<int>(vars.Frametime * 1000), 0.f);
-		playerCopy.StaminaTime = std::max(playerCopy.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
+
+		if (vars.HasStamina)
+			playerCopy.StaminaTime = std::max(playerCopy.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
 
 		// This order may change.
 		Jumpbug(playerCopy, vars, postype, frame, out, strafeButtons, useGivenButtons, curState, traceFunc, version);
@@ -2058,7 +2064,7 @@ namespace HLStrafe
 		// This has to be after PredictDuck() since we may have ducktapped,
 		// if this messes with Lgagst-ducktap() then it's the user's problem.
 		// (Though it shouldn't, generally).
-		if (out.Use && postype == PositionType::GROUND)
+		if (vars.UseSlow && out.Use && postype == PositionType::GROUND)
 			VecScale<float, 3>(playerCopy.Velocity, 0.3, playerCopy.Velocity);
 
 		LgagstJump(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, curState, traceFunc, version);
