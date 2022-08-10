@@ -1355,8 +1355,8 @@ namespace HLStrafe
 
 		if (vars.HasStamina) {
 			player.Velocity[2] = static_cast<float>(player.Velocity[2] * ((100.0 - (player.StaminaTime / 1000.0) * 19.0) / 100.0));
-			// defaults stamina again
-			player.StaminaTime = 1315.789429f; // 25000.0f / 19.0f
+			// defaults stamina again, i hope this is the correct value as something is fractionally incorrect
+			player.StaminaTime = 25000.0f / 19.0f;
 		}
 
 		CheckVelocity(player, vars);
@@ -1393,13 +1393,10 @@ namespace HLStrafe
 		auto drop = control * friction * vars.Frametime;
 		auto newspeed = std::max(speed - drop, 0.f);
 		VecScale<float, 3>(player.Velocity, newspeed / speed, player.Velocity);
-		
+
+		// non-HL stuff
 		if (vars.HasStamina) {
-			VecScale<float, 2>(player.Velocity, (100 - player.StaminaTime / 1000 * 19) / 100, player.Velocity);
-			// "Reduce this here since if we're calling Friction then we're predicting something
-			// and most likely will call Friction again and this needs to be correct."
-			// that means this does not work yet big TODO
-			player.StaminaTime = std::max(player.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
+			VecScale<float, 2>(player.Velocity, (100.0 - (player.StaminaTime / 1000.0) * 19.0) / 100.0, player.Velocity);
 		}
 	}
 
