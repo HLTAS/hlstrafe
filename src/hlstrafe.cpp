@@ -2043,7 +2043,7 @@ namespace HLStrafe
 		if (vars.Frametime != 0.f)
 			curState.PredictThis = State0ms::NOTHING;
 
-		bool reduceWishspeed = playerCopy.Ducking || (vars.HasStamina && playerCopy.InDuckAnimation);
+		bool reduceWishspeed = playerCopy.Ducking;
 		// Same as in ReduceTimers().
 		playerCopy.DuckTime = std::max(playerCopy.DuckTime - static_cast<int>(vars.Frametime * 1000), 0.f);
 
