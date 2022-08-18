@@ -1257,6 +1257,9 @@ namespace HLStrafe
 				player.DuckTime = 1000;
 				player.InDuckAnimation = true;
 
+				if (vars.DuckTapSlow && postype == PositionType::GROUND)
+					VecScale<float, 2>(player.Velocity, vars.DuckTapSlowScale, player.Velocity);
+
 				if (vars.Frametime == 0.f) {
 					if (curState.PredictThis == State0ms::NOTHING)
 						curState.PredictThis = State0ms::DUCKED;
@@ -1393,11 +1396,6 @@ namespace HLStrafe
 		auto drop = control * friction * vars.Frametime;
 		auto newspeed = std::max(speed - drop, 0.f);
 		VecScale<float, 3>(player.Velocity, newspeed / speed, player.Velocity);
-
-		// non-HL stuff
-		if (vars.HasStamina) {
-			VecScale<float, 2>(player.Velocity, (100.0 - (player.StaminaTime / 1000.0) * 19.0) / 100.0, player.Velocity);
-		}
 	}
 
 	void Ducktap(const PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc)
@@ -1627,6 +1625,8 @@ namespace HLStrafe
 
 		// Predict the next frame's origin.
 		auto playerCopy = PlayerData(player);
+		if (vars.HasStamina)
+			playerCopy.StaminaTime = std::max(playerCopy.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
 		CheckVelocity(playerCopy, vars);
 		Friction(playerCopy, postype, vars, traceFunc);
 		auto out_temp = ProcessedFrame(out);
@@ -1677,6 +1677,8 @@ namespace HLStrafe
 			return;
 
 		auto playerCopy = PlayerData(player);
+		if (vars.HasStamina)
+			playerCopy.StaminaTime = std::max(playerCopy.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
 		CheckVelocity(playerCopy, vars);
 
 		auto ground = PlayerData(playerCopy);
@@ -2043,7 +2045,8 @@ namespace HLStrafe
 		if (vars.Frametime != 0.f)
 			curState.PredictThis = State0ms::NOTHING;
 
-		bool reduceWishspeed = playerCopy.Ducking;
+		bool reduceWishspeed = playerCopy.Ducking; // not really sure if this one works well enough but it has been one frame late for other cases
+
 		// Same as in ReduceTimers().
 		playerCopy.DuckTime = std::max(playerCopy.DuckTime - static_cast<int>(vars.Frametime * 1000), 0.f);
 
@@ -2056,6 +2059,10 @@ namespace HLStrafe
 		Dbg(playerCopy, vars, postype, frame, out, strafeButtons, useGivenButtons, curState, traceFunc, version);
 		LgagstDucktap(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, curState, traceFunc, version);
 		Ducktap(playerCopy, postype, frame, curState, out, traceFunc);
+
+		// This has to be before PredictDuck() because it may do something funky to the conditions
+		reduceWishspeed = reduceWishspeed || (vars.DuckTapSlow && (playerCopy.InDuckAnimation || out.Duck));
+		
 		postype = PredictDuck(playerCopy, vars, postype, curState, out, traceFunc);
 
 		// This has to be after PredictDuck() since we may have ducktapped,
@@ -2067,7 +2074,17 @@ namespace HLStrafe
 		LgagstJump(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, curState, traceFunc, version);
 		Autojump(postype, frame, curState, out);
 		postype = PredictJump(playerCopy, postype, vars, frame, curState, out, traceFunc, true);
-		Friction(playerCopy, postype, vars, traceFunc);
+
+	
+		if (vars.DuckTapSlow && playerCopy.InDuckAnimation) {
+			// ignore friction if duck tap that same frame
+		} else {
+			Friction(playerCopy, postype, vars, traceFunc);
+		}
+
+		if (vars.HasStamina && postype == PositionType::GROUND)
+			VecScale<float, 2>(playerCopy.Velocity, (100.0 - (playerCopy.StaminaTime / 1000.0) * 19.0) / 100.0, playerCopy.Velocity);
+
 		CheckVelocity(playerCopy, vars);
 		postype = Strafe(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, true, curState, traceFunc, version, out.fractions, out.normalzs);
 
