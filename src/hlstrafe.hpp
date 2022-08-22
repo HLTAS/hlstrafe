@@ -45,7 +45,6 @@ namespace HLStrafe
 		// Non-HL stuffs
 		bool HasStamina;
 		bool DuckTapSlow;
-		float DuckTapSlowScale;
 	};
 
 	struct ProcessedFrame {
