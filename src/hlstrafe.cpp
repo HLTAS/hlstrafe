@@ -1256,6 +1256,7 @@ namespace HLStrafe
 			if (!curState.Duck && !player.Ducking) {
 				player.DuckTime = 1000;
 				player.InDuckAnimation = true;
+
 				if (vars.Frametime == 0.f) {
 					if (curState.PredictThis == State0ms::NOTHING)
 						curState.PredictThis = State0ms::DUCKED;
@@ -1333,11 +1334,11 @@ namespace HLStrafe
 		}
 
 		if (vars.Bhopcap) {
-			auto maxscaledspeed = vars.SpeedScale * vars.Maxspeed;
+			auto maxscaledspeed = vars.BhopcapMaxspeedScale * vars.Maxspeed;
 			if (maxscaledspeed > 0) {
 				auto speed = Length<float, 3>(player.Velocity);
 				if (speed > maxscaledspeed)
-					VecScale<float, 3>(player.Velocity, (maxscaledspeed / speed) * vars.BhopcapScale, player.Velocity);
+					VecScale<float, 3>(player.Velocity, (maxscaledspeed / speed) * vars.BhopcapMultiplier, player.Velocity);
 			}
 		}
 
@@ -2042,7 +2043,6 @@ namespace HLStrafe
 			curState.PredictThis = State0ms::NOTHING;
 
 		bool reduceWishspeed = playerCopy.Ducking;
-
 		// Same as in ReduceTimers().
 		playerCopy.DuckTime = std::max(playerCopy.DuckTime - static_cast<int>(vars.Frametime * 1000), 0.f);
 
@@ -2070,7 +2070,6 @@ namespace HLStrafe
 		LgagstJump(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, curState, traceFunc, version);
 		Autojump(postype, frame, curState, out);
 		postype = PredictJump(playerCopy, postype, vars, frame, curState, out, traceFunc, true);
-
 		Friction(playerCopy, postype, vars, traceFunc);
 
 		if (vars.HasStamina && postype == PositionType::GROUND)

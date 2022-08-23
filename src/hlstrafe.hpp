@@ -38,11 +38,9 @@ namespace HLStrafe
 		float Stepsize;
 		float Bounce;
 		bool Bhopcap;
-		float BhopcapScale;
-		float SpeedScale;
+		float BhopcapMultiplier;
+		float BhopcapMaxspeedScale;
 		bool UseSlow;
-
-		// Non-HL stuffs
 		bool HasStamina;
 		bool DuckTapSlow;
 	};
