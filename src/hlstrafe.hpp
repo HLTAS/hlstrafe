@@ -16,6 +16,7 @@ namespace HLStrafe
 		bool Ducking;
 		bool InDuckAnimation;
 		float DuckTime;
+		float StaminaTime;
 
 		bool HasLJModule;
 
@@ -37,6 +38,11 @@ namespace HLStrafe
 		float Stepsize;
 		float Bounce;
 		bool Bhopcap;
+		float BhopcapMultiplier;
+		float BhopcapMaxspeedScale;
+		bool UseSlow;
+		bool HasStamina;
+		bool DuckTapSlow;
 	};
 
 	struct ProcessedFrame {
