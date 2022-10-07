@@ -1393,6 +1393,9 @@ namespace HLStrafe
 		auto drop = control * friction * vars.Frametime;
 		auto newspeed = std::max(speed - drop, 0.f);
 		VecScale<float, 3>(player.Velocity, newspeed / speed, player.Velocity);
+
+		if (vars.HasStamina)
+			VecScale<float, 2>(player.Velocity, (100.0 - (player.StaminaTime / 1000.0) * 19.0) / 100.0, player.Velocity);
 	}
 
 	void Ducktap(const PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc)
@@ -1644,10 +1647,6 @@ namespace HLStrafe
 		// Do the actual lgagst check.
 		auto ground = PlayerData(playerCopy);
 		Friction(ground, postype, vars, traceFunc);
-
-		if (vars.HasStamina)
-			VecScale<float, 2>(ground.Velocity, (100.0 - (ground.StaminaTime / 1000.0) * 19.0) / 100.0, ground.Velocity);
-
 		CheckVelocity(ground, vars);
 		out_temp = ProcessedFrame(out);
 		auto curStateCopy2 = CurrentState(curStateCopy);
@@ -1688,10 +1687,6 @@ namespace HLStrafe
 
 		auto ground = PlayerData(playerCopy);
 		Friction(ground, postype, vars, traceFunc);
-
-		if (vars.HasStamina)
-			VecScale<float, 2>(ground.Velocity, (100.0 - (ground.StaminaTime / 1000.0) * 19.0) / 100.0, ground.Velocity);
-
 		CheckVelocity(ground, vars);
 		auto out_temp = ProcessedFrame(out);
 		auto curStateCopy = CurrentState(curState);
@@ -2083,10 +2078,6 @@ namespace HLStrafe
 		Autojump(postype, frame, curState, out);
 		postype = PredictJump(playerCopy, postype, vars, frame, curState, out, traceFunc, true);
 		Friction(playerCopy, postype, vars, traceFunc);
-
-		if (vars.HasStamina && postype == PositionType::GROUND)
-			VecScale<float, 2>(playerCopy.Velocity, (100.0 - (playerCopy.StaminaTime / 1000.0) * 19.0) / 100.0, playerCopy.Velocity);
-
 		CheckVelocity(playerCopy, vars);
 		postype = Strafe(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, true, curState, traceFunc, version, out.fractions, out.normalzs);
 
