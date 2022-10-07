@@ -1622,8 +1622,10 @@ namespace HLStrafe
 
 		// Predict the next frame's origin.
 		auto playerCopy = PlayerData(player);
+
 		if (vars.HasStamina)
 			playerCopy.StaminaTime = std::max(playerCopy.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
+
 		CheckVelocity(playerCopy, vars);
 		Friction(playerCopy, postype, vars, traceFunc);
 		auto out_temp = ProcessedFrame(out);
@@ -1642,6 +1644,10 @@ namespace HLStrafe
 		// Do the actual lgagst check.
 		auto ground = PlayerData(playerCopy);
 		Friction(ground, postype, vars, traceFunc);
+
+		if (vars.HasStamina)
+			VecScale<float, 2>(ground.Velocity, (100.0 - (ground.StaminaTime / 1000.0) * 19.0) / 100.0, ground.Velocity);
+
 		CheckVelocity(ground, vars);
 		out_temp = ProcessedFrame(out);
 		auto curStateCopy2 = CurrentState(curStateCopy);
@@ -1674,12 +1680,18 @@ namespace HLStrafe
 			return;
 
 		auto playerCopy = PlayerData(player);
+
 		if (vars.HasStamina)
 			playerCopy.StaminaTime = std::max(playerCopy.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
+
 		CheckVelocity(playerCopy, vars);
 
 		auto ground = PlayerData(playerCopy);
 		Friction(ground, postype, vars, traceFunc);
+
+		if (vars.HasStamina)
+			VecScale<float, 2>(ground.Velocity, (100.0 - (ground.StaminaTime / 1000.0) * 19.0) / 100.0, ground.Velocity);
+
 		CheckVelocity(ground, vars);
 		auto out_temp = ProcessedFrame(out);
 		auto curStateCopy = CurrentState(curState);
