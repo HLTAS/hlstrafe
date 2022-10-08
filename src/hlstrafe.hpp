@@ -5,7 +5,7 @@
 
 namespace HLStrafe
 {
-	const unsigned MAX_SUPPORTED_VERSION = 4;
+	const unsigned MAX_SUPPORTED_VERSION = 5;
 
 	struct PlayerData {
 		float Origin[3];
@@ -229,7 +229,7 @@ namespace HLStrafe
 	/*
 		Applies the ground friction the same way as PM_Friction would, changing player.Velocity.
 	*/
-	void Friction(PlayerData& player, PositionType postype, const MovementVars& vars, TraceFunc traceFunc);
+	void Friction(PlayerData& player, PositionType postype, const MovementVars& vars, TraceFunc traceFunc, unsigned version);
 
 	/*
 		Autofuncs. They modify stuff in curState and also buttons from the ProcessedFrame.
