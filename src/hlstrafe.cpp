@@ -1644,7 +1644,7 @@ namespace HLStrafe
 		if (tr.StartSolid)
 			return;
 
-		if (vars.HasStamina)
+		if (vars.HasStamina && version > 4)
 			playerCopy.StaminaTime = std::max(playerCopy.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
 
 		// Do the actual lgagst check.
