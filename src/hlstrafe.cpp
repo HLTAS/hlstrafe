@@ -2082,7 +2082,7 @@ namespace HLStrafe
 		postype = PredictJump(playerCopy, postype, vars, frame, curState, out, traceFunc, true);
 		Friction(playerCopy, postype, vars, traceFunc, version);
 
-		if (vars.HasStamina && postype == PositionType::GROUND && version == 4)
+		if (vars.HasStamina && postype == PositionType::GROUND && version <= 4)
 			VecScale<float, 2>(playerCopy.Velocity, (100.0 - (playerCopy.StaminaTime / 1000.0) * 19.0) / 100.0, playerCopy.Velocity);
 
 		CheckVelocity(playerCopy, vars);
