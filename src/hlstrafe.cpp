@@ -1644,6 +1644,9 @@ namespace HLStrafe
 		if (tr.StartSolid)
 			return;
 
+		if (vars.HasStamina)
+			playerCopy.StaminaTime = std::max(playerCopy.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
+
 		// Do the actual lgagst check.
 		auto ground = PlayerData(playerCopy);
 		Friction(ground, postype, vars, traceFunc);
