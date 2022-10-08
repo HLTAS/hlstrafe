@@ -1394,7 +1394,7 @@ namespace HLStrafe
 		auto newspeed = std::max(speed - drop, 0.f);
 		VecScale<float, 3>(player.Velocity, newspeed / speed, player.Velocity);
 
-		if (vars.HasStamina)
+		if (vars.HasStamina && version > 4)
 			VecScale<float, 2>(player.Velocity, (100.0 - (player.StaminaTime / 1000.0) * 19.0) / 100.0, player.Velocity);
 	}
 
@@ -2081,6 +2081,10 @@ namespace HLStrafe
 		Autojump(postype, frame, curState, out);
 		postype = PredictJump(playerCopy, postype, vars, frame, curState, out, traceFunc, true);
 		Friction(playerCopy, postype, vars, traceFunc);
+
+		if (vars.HasStamina && postype == PositionType::GROUND && version == 4)
+			VecScale<float, 2>(playerCopy.Velocity, (100.0 - (playerCopy.StaminaTime / 1000.0) * 19.0) / 100.0, playerCopy.Velocity);
+
 		CheckVelocity(playerCopy, vars);
 		postype = Strafe(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, true, curState, traceFunc, version, out.fractions, out.normalzs);
 
