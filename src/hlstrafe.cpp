@@ -1364,7 +1364,7 @@ namespace HLStrafe
 		return PositionType::AIR;
 	}
 
-	void Friction(PlayerData& player, PositionType postype, const MovementVars& vars, TraceFunc traceFunc)
+	void Friction(PlayerData& player, PositionType postype, const MovementVars& vars, TraceFunc traceFunc, unsigned version)
 	{
 		player.SpeedBeforeFriction = Length<float, 2>(player.Velocity);
 
@@ -1630,7 +1630,7 @@ namespace HLStrafe
 			playerCopy.StaminaTime = std::max(playerCopy.StaminaTime - static_cast<int>(vars.Frametime * 1000), 0.f);
 
 		CheckVelocity(playerCopy, vars);
-		Friction(playerCopy, postype, vars, traceFunc);
+		Friction(playerCopy, postype, vars, traceFunc, version);
 		auto out_temp = ProcessedFrame(out);
 		auto curStateCopy = CurrentState(curState);
 		Strafe(playerCopy, vars, postype, frame, out_temp, reduceWishspeed, strafeButtons, useGivenButtons, true, curStateCopy, traceFunc, version);
@@ -1649,7 +1649,7 @@ namespace HLStrafe
 
 		// Do the actual lgagst check.
 		auto ground = PlayerData(playerCopy);
-		Friction(ground, postype, vars, traceFunc);
+		Friction(ground, postype, vars, traceFunc, version);
 		CheckVelocity(ground, vars);
 		out_temp = ProcessedFrame(out);
 		auto curStateCopy2 = CurrentState(curStateCopy);
@@ -1689,7 +1689,7 @@ namespace HLStrafe
 		CheckVelocity(playerCopy, vars);
 
 		auto ground = PlayerData(playerCopy);
-		Friction(ground, postype, vars, traceFunc);
+		Friction(ground, postype, vars, traceFunc, version);
 		CheckVelocity(ground, vars);
 		auto out_temp = ProcessedFrame(out);
 		auto curStateCopy = CurrentState(curState);
@@ -1887,7 +1887,7 @@ namespace HLStrafe
 				return;
 
 			auto ground = PlayerData(player);
-			Friction(ground, postype, vars, traceFunc);
+			Friction(ground, postype, vars, traceFunc, version);
 			CheckVelocity(ground, vars);
 			auto out_temp = ProcessedFrame(out);
 			auto curStateCopy = CurrentState(curState);
@@ -2080,7 +2080,7 @@ namespace HLStrafe
 		LgagstJump(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, curState, traceFunc, version);
 		Autojump(postype, frame, curState, out);
 		postype = PredictJump(playerCopy, postype, vars, frame, curState, out, traceFunc, true);
-		Friction(playerCopy, postype, vars, traceFunc);
+		Friction(playerCopy, postype, vars, traceFunc, version);
 
 		if (vars.HasStamina && postype == PositionType::GROUND && version == 4)
 			VecScale<float, 2>(playerCopy.Velocity, (100.0 - (playerCopy.StaminaTime / 1000.0) * 19.0) / 100.0, playerCopy.Velocity);
