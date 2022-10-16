@@ -1216,7 +1216,9 @@ namespace HLStrafe
 
 	PositionType GetPositionType(PlayerData& player, TraceFunc traceFunc)
 	{
-		// TODO: Check water. If we're under water, return here.
+		// Check water. If we're under water, return here.
+		if (player.WaterLevel > 1)
+			return PositionType::WATER;
 
 		// Check ground.
 		if (player.Velocity[2] > 180)
