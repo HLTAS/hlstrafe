@@ -17,6 +17,8 @@ namespace HLStrafe
 		bool InDuckAnimation;
 		float DuckTime;
 		float StaminaTime;
+		int WaterLevel;
+		bool Walking;
 
 		bool HasLJModule;
 
