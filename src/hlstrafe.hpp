@@ -108,6 +108,8 @@ namespace HLStrafe
 			ChangePitchOver(0),
 			ChangeTargetYawFinalValue(0),
 			ChangeTargetYawOver(0),
+			ChangeTargetYawOffsetValue(0),
+			ChangeTargetYawOffsetOver(0),
 			LockYawToTargetYaw(false),
 			LockTargetYaw(0),
 			TargetYawOverrideActive(false),
@@ -143,6 +145,9 @@ namespace HLStrafe
 		float ChangePitchOver;
 		float ChangeTargetYawFinalValue;
 		float ChangeTargetYawOver;
+		float ChangeTargetYawOffsetValue;
+		float ChangeTargetYawOffsetFinal;
+		float ChangeTargetYawOffsetOver;
 
 		bool LockYawToTargetYaw; // Used for velocity_lock target yaw.
 		double LockTargetYaw; // Only valid if LockYawToTargetYaw == true.

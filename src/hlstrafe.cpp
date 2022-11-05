@@ -503,6 +503,9 @@ namespace HLStrafe
 		if (curState.TargetYawOverrideActive)
 			return std::optional(static_cast<uint16_t>(curState.TargetYawOverride * M_INVU_DEG));
 
+		if (curState.ChangeTargetYawOffsetValue != 0.f)
+			return std::optional(static_cast<uint16_t>((vel_yaw + curState.ChangeTargetYawOffsetValue * M_DEG2RAD) * M_INVU_RAD));
+
 		switch (curState.Parameters.Type) {
 			case HLTAS::ConstraintsType::VELOCITY:
 			{
@@ -549,6 +552,16 @@ namespace HLStrafe
 				static_cast<int>(curState.TargetYawOverride * M_INVU_DEG),
 				static_cast<int>(curState.TargetYawOverride * M_INVU_DEG)
 			);
+
+		if (curState.ChangeTargetYawOffsetValue != 0.f) {
+			if (curState.Parameters.Parameters.VelocityLock.Constraints >= 180)
+				return VCT::AngleConstraints(0, 65535);
+
+			return VCT::AngleConstraints(
+				static_cast<int>((vel_yaw - (curState.ChangeTargetYawOffsetValue + curState.Parameters.Parameters.VelocityLock.Constraints) * M_DEG2RAD) * M_INVU_RAD),
+				static_cast<int>(std::ceil((vel_yaw + (curState.ChangeTargetYawOffsetValue + curState.Parameters.Parameters.VelocityLock.Constraints) * M_DEG2RAD) * M_INVU_RAD))
+			);
+		}
 
 		switch (curState.Parameters.Type) {
 			case HLTAS::ConstraintsType::VELOCITY:
