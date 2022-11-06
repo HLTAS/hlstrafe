@@ -2014,6 +2014,7 @@ namespace HLStrafe
 			curState.ChangeTargetYawOffsetOver = std::max(0.f, curState.ChangeTargetYawOffsetOver - vars.Frametime);
 
 			if (curState.ChangeTargetYawOffsetOver == 0) {
+				curState.Parameters.Parameters.Yaw.Yaw = targetValue;
 				curState.Parameters.Type = HLTAS::ConstraintsType::VELOCITY_LOCK;
 				curState.Parameters.Parameters.VelocityLock.Constraints = 0.0;
 			}
