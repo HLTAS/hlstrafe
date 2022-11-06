@@ -558,7 +558,7 @@ namespace HLStrafe
 				return VCT::AngleConstraints(0, 65535);
 
 			return VCT::AngleConstraints(
-				static_cast<int>((vel_yaw - (curState.ChangeTargetYawOffsetValue + curState.Parameters.Parameters.VelocityLock.Constraints) * M_DEG2RAD) * M_INVU_RAD),
+				static_cast<int>((vel_yaw + (curState.ChangeTargetYawOffsetValue - curState.Parameters.Parameters.VelocityLock.Constraints) * M_DEG2RAD) * M_INVU_RAD),
 				static_cast<int>(std::ceil((vel_yaw + (curState.ChangeTargetYawOffsetValue + curState.Parameters.Parameters.VelocityLock.Constraints) * M_DEG2RAD) * M_INVU_RAD))
 			);
 		}
@@ -1980,8 +1980,6 @@ namespace HLStrafe
 				vel_yaw = yaw;
 			}
 
-			curState.ChangeTargetYawOffsetFinal = curState.ChangeTargetYawOffsetFinal == 0.0 ? vel_yaw + curState.ChangeTargetYawOffsetValue : curState.ChangeTargetYawOffsetFinal;
-
 			double constraints = 0;
 
 			switch (curState.Parameters.Type) {
@@ -2006,19 +2004,18 @@ namespace HLStrafe
 			}
 
 			curState.Parameters.Type = HLTAS::ConstraintsType::YAW;
-			curState.Parameters.Parameters.Yaw.Yaw = yaw;
+			curState.Parameters.Parameters.Yaw.Yaw = vel_yaw;
 			curState.Parameters.Parameters.Yaw.Constraints = constraints;
 
-			float targetValue = static_cast<float>(NormalizeDeg(curState.ChangeTargetYawOffsetFinal));
+			float targetValue = static_cast<float>(NormalizeDeg(vel_yaw + curState.ChangeTargetYawOffsetValue));
 			float difference = static_cast<float>(GetAngleDifference(yaw, targetValue));
 
 			float changeRate = difference / curState.ChangeTargetYawOffsetOver;
 			curState.ChangeTargetYawOffsetOver = std::max(0.f, curState.ChangeTargetYawOffsetOver - vars.Frametime);
 
 			if (curState.ChangeTargetYawOffsetOver == 0) {
-				curState.Parameters.Parameters.Yaw.Yaw = curState.ChangeTargetYawFinalValue;
-				curState.ChangeTargetYawOffsetFinal = 0.0;
 				curState.Parameters.Type = HLTAS::ConstraintsType::VELOCITY_LOCK;
+				curState.Parameters.Parameters.VelocityLock.Constraints = 0.0;
 			}
 			else
 				curState.Parameters.Parameters.Yaw.Yaw = yaw + vars.Frametime * changeRate;

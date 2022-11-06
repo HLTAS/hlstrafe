@@ -146,7 +146,6 @@ namespace HLStrafe
 		float ChangeTargetYawFinalValue;
 		float ChangeTargetYawOver;
 		float ChangeTargetYawOffsetValue;
-		float ChangeTargetYawOffsetFinal;
 		float ChangeTargetYawOffsetOver;
 
 		bool LockYawToTargetYaw; // Used for velocity_lock target yaw.
