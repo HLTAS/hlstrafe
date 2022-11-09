@@ -17,7 +17,6 @@ namespace HLStrafe
 		bool InDuckAnimation;
 		float DuckTime;
 		float StaminaTime;
-		int WaterLevel;
 		bool Walking;
 
 		bool HasLJModule;
@@ -179,23 +178,24 @@ namespace HLStrafe
 	};
 
 	typedef std::function<TraceResult(const float[3], const float[3], HLStrafe::HullType)> TraceFunc;
+	typedef std::function<int(float[3], int*)> PointContentsFunc;
 
 	/*
 		All-in-one function that does everything and returns the buttons,
 		viewangles and FSU. Modifies curState. You should keep the curState
 		and pass it to the function next time it's invoked (next frame usually).
 	*/
-	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, TraceFunc traceFunc, unsigned version);
+	ProcessedFrame MainFunc(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version);
 
 	/*
 		Predicts the changes made in past 0ms frames (since those frames didn't run on the server yet).
 	*/
-	PositionType PredictPast0msFrames(PlayerData& player, const MovementVars& vars, PositionType postype, const ProcessedFrame& out, const CurrentState& curState, TraceFunc traceFunc);
+	PositionType PredictPast0msFrames(PlayerData& player, const MovementVars& vars, PositionType postype, const ProcessedFrame& out, const CurrentState& curState, TraceFunc traceFunc, PointContentsFunc pointContentsFunc);
 
 	/*
 		Checks if the next frame needs to be 0ms.
 	*/
-	void CheckIfNextFrameShouldBe0ms(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, PositionType postype, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, const CurrentState& curState, TraceFunc traceFunc, unsigned version);
+	void CheckIfNextFrameShouldBe0ms(const PlayerData& player, const MovementVars& vars, const HLTAS::Frame& frame, PositionType postype, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, const CurrentState& curState, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version);
 
 	/*
 		Returns the difference between two angles in a [-180; 180) range.
@@ -210,7 +210,7 @@ namespace HLStrafe
 	/*
 		Figures out the player's position type and, if necessary, updates player.Origin and curState.
 	*/
-	PositionType GetPositionType(PlayerData& player, TraceFunc traceFunc);
+	PositionType GetPositionType(PlayerData& player, TraceFunc traceFunc, PointContentsFunc pointContentsFunc);
 
 	/*
 		Limits the velocity components to maxvelocity.
@@ -220,13 +220,13 @@ namespace HLStrafe
 	/*
 		Changes the player data the same way as PM_Duck would, returns a new postype.
 	*/
-	PositionType PredictDuck(PlayerData& player, const MovementVars& vars, PositionType postype, CurrentState& curState, const ProcessedFrame& out, TraceFunc traceFunc);
+	PositionType PredictDuck(PlayerData& player, const MovementVars& vars, PositionType postype, CurrentState& curState, const ProcessedFrame& out, TraceFunc traceFunc, PointContentsFunc pointContentsFunc);
 
 	/*
 		Changes the player data the same way as PM_Jump would, returns a new postype.
 		Changes the processed frame in case of some duck-when autofuncs.
 	*/
-	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc, bool decreaseDwjTimes = false);
+	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, bool decreaseDwjTimes = false);
 
 	/*
 		Applies the ground friction the same way as PM_Friction would, changing player.Velocity.
@@ -238,15 +238,15 @@ namespace HLStrafe
 		Autofuncs generally do NOT release any pressed buttons with an exception of Ducktap
 		(for the sake of ducktapping while ducking the rest of the time).
 	*/
-	void Jumpbug(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc, unsigned version);
+	void Jumpbug(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version);
 	void Ducktap(const PlayerData& player, PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc);
 	void Autojump(PositionType postype, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out);
 
-	void Dbc(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc, unsigned version);
-	void Dbg(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc, unsigned version);
-	void LgagstDucktap(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc, unsigned version);
-	void LgagstJump(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc, unsigned version);
-	PositionType Strafe(PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, bool predictOrigin, CurrentState& curState, TraceFunc traceFunc, unsigned version, float fractions[4] = nullptr, float normalzs[4] = nullptr);
+	void Dbc(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version);
+	void Dbg(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version);
+	void LgagstDucktap(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version);
+	void LgagstJump(const PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, CurrentState& curState, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version);
+	PositionType Strafe(PlayerData& player, const MovementVars& vars, PositionType postype, const HLTAS::Frame& frame, ProcessedFrame& out, bool reduceWishspeed, const HLTAS::StrafeButtons& strafeButtons, bool useGivenButtons, bool predictOrigin, CurrentState& curState, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version, float fractions[4] = nullptr, float normalzs[4] = nullptr);
 
 	/*
 		Returns the angle in radians - [0; Pi] - between velocity and wishdir that will
@@ -321,7 +321,7 @@ namespace HLStrafe
 		Velocity, Basevelocity, Origin;
 		Frametime, Accelerate or Airaccelerate, EntFriction, EntGravity, Gravity.
 	*/
-	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, TraceFunc traceFunc, bool calcVelocity = false, const double a[2] = nullptr, float fractions[4] = nullptr, float normalzs[4] = nullptr);
+	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, bool calcVelocity = false, const double a[2] = nullptr, float fractions[4] = nullptr, float normalzs[4] = nullptr);
 
 	/*
 		Helpers for the movement prediction, do exactly what PM_FlyMove and PM_ClipVelocity do.
