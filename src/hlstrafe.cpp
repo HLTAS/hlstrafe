@@ -1975,10 +1975,8 @@ namespace HLStrafe
 			float vel_yaw = 0.0;
 			if (!IsZero<float, 2>(player.Velocity))
 				vel_yaw = Atan2(player.Velocity[1], player.Velocity[0]) * M_RAD2DEG;
-
-			if (vel_yaw == 0.0) {
+			else
 				vel_yaw = yaw;
-			}
 
 			double constraints = 0;
 
@@ -2004,7 +2002,6 @@ namespace HLStrafe
 			}
 
 			curState.Parameters.Type = HLTAS::ConstraintsType::YAW;
-			curState.Parameters.Parameters.Yaw.Yaw = vel_yaw;
 			curState.Parameters.Parameters.Yaw.Constraints = constraints;
 
 			float targetValue = static_cast<float>(NormalizeDeg(vel_yaw + curState.ChangeTargetYawOffsetValue));
@@ -2016,7 +2013,7 @@ namespace HLStrafe
 			if (curState.ChangeTargetYawOffsetOver == 0) {
 				curState.Parameters.Parameters.Yaw.Yaw = targetValue;
 				curState.Parameters.Type = HLTAS::ConstraintsType::VELOCITY_LOCK;
-				curState.Parameters.Parameters.VelocityLock.Constraints = 0.0;
+				curState.Parameters.Parameters.VelocityLock.Constraints = 0;
 			}
 			else
 				curState.Parameters.Parameters.Yaw.Yaw = yaw + vars.Frametime * changeRate;
