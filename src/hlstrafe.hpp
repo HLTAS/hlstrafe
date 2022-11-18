@@ -108,6 +108,7 @@ namespace HLStrafe
 			ChangePitchOver(0),
 			ChangeTargetYawFinalValue(0),
 			ChangeTargetYawOver(0),
+			TargetYawOffset(0),
 			ChangeTargetYawOffsetValue(0),
 			ChangeTargetYawOffsetOver(0),
 			LockYawToTargetYaw(false),
@@ -145,6 +146,8 @@ namespace HLStrafe
 		float ChangePitchOver;
 		float ChangeTargetYawFinalValue;
 		float ChangeTargetYawOver;
+
+		float TargetYawOffset;
 		float ChangeTargetYawOffsetValue;
 		float ChangeTargetYawOffsetOver;
 

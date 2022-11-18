@@ -503,26 +503,23 @@ namespace HLStrafe
 		if (curState.TargetYawOverrideActive)
 			return std::optional(static_cast<uint16_t>(curState.TargetYawOverride * M_INVU_DEG));
 
-		if (curState.ChangeTargetYawOffsetValue != 0.f && curState.ChangeTargetYawOffsetOver == 0.f)
-			return std::optional(static_cast<uint16_t>((vel_yaw + curState.ChangeTargetYawOffsetValue * M_DEG2RAD) * M_INVU_RAD));
-
 		switch (curState.Parameters.Type) {
 			case HLTAS::ConstraintsType::VELOCITY:
 			{
 				if (curState.Parameters.Parameters.Velocity.Constraints == 0)
-					return std::optional(static_cast<uint16_t>(vel_yaw * M_INVU_RAD));
+					return std::optional(static_cast<uint16_t>((vel_yaw + curState.TargetYawOffset * M_DEG2RAD) * M_INVU_RAD));
 			} break;
 
 			case HLTAS::ConstraintsType::VELOCITY_AVG:
 			{
 				if (curState.Parameters.Parameters.VelocityAvg.Constraints == 0)
-					return std::optional(static_cast<uint16_t>(vel_yaw * M_INVU_RAD));
+					return std::optional(static_cast<uint16_t>((vel_yaw + curState.TargetYawOffset * M_DEG2RAD) * M_INVU_RAD));
 			} break;
 
 			case HLTAS::ConstraintsType::VELOCITY_LOCK:
 			{
 				if (curState.Parameters.Parameters.VelocityLock.Constraints == 0)
-					return std::optional(static_cast<uint16_t>(vel_yaw * M_INVU_RAD));
+					return std::optional(static_cast<uint16_t>((vel_yaw + curState.TargetYawOffset * M_DEG2RAD) * M_INVU_RAD));
 			} break;
 
 			case HLTAS::ConstraintsType::YAW:
@@ -553,16 +550,6 @@ namespace HLStrafe
 				static_cast<int>(curState.TargetYawOverride * M_INVU_DEG)
 			);
 
-		if (curState.ChangeTargetYawOffsetValue != 0.f && curState.ChangeTargetYawOffsetOver == 0.f) {
-			if (curState.Parameters.Parameters.VelocityLock.Constraints >= 180)
-				return VCT::AngleConstraints(0, 65535);
-
-			return VCT::AngleConstraints(
-				static_cast<int>((vel_yaw + (curState.ChangeTargetYawOffsetValue - curState.Parameters.Parameters.VelocityLock.Constraints) * M_DEG2RAD) * M_INVU_RAD),
-				static_cast<int>(std::ceil((vel_yaw + (curState.ChangeTargetYawOffsetValue + curState.Parameters.Parameters.VelocityLock.Constraints) * M_DEG2RAD) * M_INVU_RAD))
-			);
-		}
-
 		switch (curState.Parameters.Type) {
 			case HLTAS::ConstraintsType::VELOCITY:
 			{
@@ -570,8 +557,10 @@ namespace HLStrafe
 					return VCT::AngleConstraints(0, 65535);
 
 				return VCT::AngleConstraints(
-					static_cast<int>((vel_yaw - curState.Parameters.Parameters.Velocity.Constraints * M_DEG2RAD) * M_INVU_RAD),
-					static_cast<int>(std::ceil((vel_yaw + curState.Parameters.Parameters.Velocity.Constraints * M_DEG2RAD) * M_INVU_RAD))
+					static_cast<int>((vel_yaw + 
+						(curState.TargetYawOffset - curState.Parameters.Parameters.Velocity.Constraints) * M_DEG2RAD) * M_INVU_RAD),
+					static_cast<int>(std::ceil((vel_yaw + 
+						(curState.TargetYawOffset + curState.Parameters.Parameters.Velocity.Constraints) * M_DEG2RAD) * M_INVU_RAD))
 				);
 			} break;
 
@@ -581,8 +570,10 @@ namespace HLStrafe
 					return VCT::AngleConstraints(0, 65535);
 
 				return VCT::AngleConstraints(
-					static_cast<int>((vel_yaw - curState.Parameters.Parameters.VelocityAvg.Constraints * M_DEG2RAD) * M_INVU_RAD),
-					static_cast<int>(std::ceil((vel_yaw + curState.Parameters.Parameters.VelocityAvg.Constraints * M_DEG2RAD) * M_INVU_RAD))
+					static_cast<int>((vel_yaw + 
+						(curState.TargetYawOffset - curState.Parameters.Parameters.VelocityAvg.Constraints) * M_DEG2RAD) * M_INVU_RAD),
+					static_cast<int>(std::ceil((vel_yaw + 
+						(curState.TargetYawOffset + curState.Parameters.Parameters.VelocityAvg.Constraints) * M_DEG2RAD) * M_INVU_RAD))
 				);
 			} break;
 
@@ -592,8 +583,10 @@ namespace HLStrafe
 					return VCT::AngleConstraints(0, 65535);
 
 				return VCT::AngleConstraints(
-					static_cast<int>((vel_yaw - curState.Parameters.Parameters.VelocityLock.Constraints * M_DEG2RAD) * M_INVU_RAD),
-					static_cast<int>(std::ceil((vel_yaw + curState.Parameters.Parameters.VelocityLock.Constraints * M_DEG2RAD) * M_INVU_RAD))
+					static_cast<int>((vel_yaw + 
+						(curState.TargetYawOffset - curState.Parameters.Parameters.VelocityLock.Constraints) * M_DEG2RAD) * M_INVU_RAD),
+					static_cast<int>(std::ceil((vel_yaw + 
+						(curState.TargetYawOffset + curState.Parameters.Parameters.VelocityLock.Constraints) * M_DEG2RAD) * M_INVU_RAD))
 				);
 			} break;
 
@@ -1972,51 +1965,17 @@ namespace HLStrafe
 				out.Pitch += vars.Frametime * changeRate;
 		}
 		if (curState.ChangeTargetYawOffsetOver > 0) {
-			float vel_yaw = 0.0;
-			if (!IsZero<float, 2>(player.Velocity))
-				vel_yaw = Atan2(player.Velocity[1], player.Velocity[0]) * M_RAD2DEG;
-			else
-				vel_yaw = yaw;
-
-			double constraints = 0;
-
-			switch (curState.Parameters.Type) {
-				case HLTAS::ConstraintsType::VELOCITY:
-					constraints = curState.Parameters.Parameters.Velocity.Constraints;
-					break;
-				case HLTAS::ConstraintsType::VELOCITY_AVG:
-					constraints = curState.Parameters.Parameters.VelocityAvg.Constraints;
-					break;
-				case HLTAS::ConstraintsType::VELOCITY_LOCK:
-					constraints = curState.Parameters.Parameters.VelocityLock.Constraints;
-					break;
-				case HLTAS::ConstraintsType::YAW:
-					constraints = curState.Parameters.Parameters.Yaw.Constraints;
-					break;
-				case HLTAS::ConstraintsType::YAW_RANGE:
-					constraints = 0.1;
-					break;
-				default:
-					assert(false);
-					break;
-			}
-
-			curState.Parameters.Type = HLTAS::ConstraintsType::YAW;
-			curState.Parameters.Parameters.Yaw.Constraints = constraints;
-
-			float targetValue = static_cast<float>(NormalizeDeg(vel_yaw + curState.ChangeTargetYawOffsetValue));
-			float difference = static_cast<float>(GetAngleDifference(yaw, targetValue));
-
-			float changeRate = difference / curState.ChangeTargetYawOffsetOver;
+			float changeRate = static_cast<float>(NormalizeDeg(curState.ChangeTargetYawOffsetValue - curState.TargetYawOffset))
+			/ curState.ChangeTargetYawOffsetOver;
 			curState.ChangeTargetYawOffsetOver = std::max(0.f, curState.ChangeTargetYawOffsetOver - vars.Frametime);
 
-			if (curState.ChangeTargetYawOffsetOver == 0) {
-				curState.Parameters.Parameters.Yaw.Yaw = targetValue;
-				curState.Parameters.Type = HLTAS::ConstraintsType::VELOCITY_LOCK;
-				curState.Parameters.Parameters.VelocityLock.Constraints = 0;
-			}
+			if (curState.ChangeTargetYawOffsetOver == 0)
+				curState.TargetYawOffset = curState.ChangeTargetYawOffsetValue;
 			else
-				curState.Parameters.Parameters.Yaw.Yaw = yaw + vars.Frametime * changeRate;
+				curState.TargetYawOffset += vars.Frametime * changeRate;
+		}
+		else {
+			curState.TargetYawOffset = curState.ChangeTargetYawOffsetValue;
 		}
 		if (curState.ChangeTargetYawOver > 0) {
 			double constraints = 0;
