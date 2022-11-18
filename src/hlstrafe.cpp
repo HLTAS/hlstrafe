@@ -1965,8 +1965,10 @@ namespace HLStrafe
 				out.Pitch += vars.Frametime * changeRate;
 		}
 		if (curState.ChangeTargetYawOffsetOver > 0) {
-			float targetValue = static_cast<float>(NormalizeDeg(curState.ChangeTargetYawOffsetValue - curState.TargetYawOffset));
-			float changeRate = targetValue / curState.ChangeTargetYawOffsetOver;
+			float targetValue = static_cast<float>(NormalizeDeg(curState.ChangeTargetYawOffsetValue));
+			float difference = static_cast<float>(GetAngleDifference(curState.TargetYawOffset, targetValue));
+
+			float changeRate = difference / curState.ChangeTargetYawOffsetOver;
 			curState.ChangeTargetYawOffsetOver = std::max(0.f, curState.ChangeTargetYawOffsetOver - vars.Frametime);
 
 			if (curState.ChangeTargetYawOffsetOver == 0)
