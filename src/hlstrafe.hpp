@@ -178,7 +178,7 @@ namespace HLStrafe
 	};
 
 	typedef std::function<TraceResult(const float[3], const float[3], HLStrafe::HullType)> TraceFunc;
-	typedef std::function<int(float[3], int*)> PointContentsFunc;
+	typedef std::function<int(const float[3])> PointContentsFunc;
 
 	/*
 		All-in-one function that does everything and returns the buttons,

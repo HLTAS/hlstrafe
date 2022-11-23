@@ -1223,9 +1223,12 @@ namespace HLStrafe
 		float point[3];
 		VecCopy<float, 3>(player.Origin, point);
 
-		point[2] += (player.Ducking ? (VEC_DUCK_HULL_MIN[2] + VEC_DUCK_HULL_MAX[2]) : (VEC_HULL_MIN[2] + VEC_HULL_MAX[2])) / 2.f;
+		// Pick a spot just above the players feet.
+		point[0] += (player.Ducking ? (VEC_DUCK_HULL_MIN[0] + VEC_DUCK_HULL_MAX[0]) : (VEC_HULL_MIN[0] + VEC_HULL_MAX[0])) * 0.5f;
+		point[1] += (player.Ducking ? (VEC_DUCK_HULL_MIN[1] + VEC_DUCK_HULL_MAX[1]) : (VEC_HULL_MIN[1] + VEC_HULL_MAX[1])) * 0.5f;
+		point[2] += ((player.Ducking ? VEC_DUCK_HULL_MIN[2] : VEC_HULL_MIN[2]) + 1);
 
-		int contents = pointContentsFunc(point, 0);
+		int contents = pointContentsFunc(point);
 
 		if (contents <= CONTENTS_WATER && contents > CONTENTS_TRANSLUCENT)
 			return PositionType::WATER;
@@ -1234,6 +1237,7 @@ namespace HLStrafe
 		if (player.Velocity[2] > 180)
 			return PositionType::AIR;
 
+		VecCopy<float, 3>(player.Origin, point);
 		point[2] -= 2;
 
 		auto tr = traceFunc(player.Origin, point, (player.Ducking) ? HullType::DUCKED : HullType::NORMAL);
