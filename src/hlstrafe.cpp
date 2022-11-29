@@ -1230,8 +1230,14 @@ namespace HLStrafe
 
 		int contents = pointContentsFunc(point);
 
-		if (contents <= CONTENTS_WATER && contents > CONTENTS_TRANSLUCENT)
-			return PositionType::WATER;
+		if (contents <= CONTENTS_WATER && contents > CONTENTS_TRANSLUCENT) {
+			// Now check a point that is at the player hull midpoint.
+			point[2] = player.Origin[2] + (player.Ducking ? (VEC_DUCK_HULL_MIN[2] + VEC_DUCK_HULL_MAX[2]) : (VEC_HULL_MIN[2] + VEC_HULL_MAX[2])) * 0.5f;
+			contents = pointContentsFunc(point);
+			// If that point is also under water...
+			if (contents <= CONTENTS_WATER && contents > CONTENTS_TRANSLUCENT)
+				return PositionType::WATER;
+		}
 
 		// Check ground.
 		if (player.Velocity[2] > 180)
