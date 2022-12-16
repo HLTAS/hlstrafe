@@ -498,6 +498,33 @@ namespace HLStrafe
 		avec[1] = wishvel[1];
 	}
 
+	void UpdateLookAtViewangle(const PlayerData& player, CurrentState& curState)
+	{
+		if (curState.Parameters.Parameters.LookAt.Entity < 0) {
+			curState.TargetYawLookAtOrigin[0] = curState.Parameters.Parameters.LookAt.X;
+			curState.TargetYawLookAtOrigin[1] = curState.Parameters.Parameters.LookAt.Y;
+			curState.TargetYawLookAtOrigin[2] = curState.Parameters.Parameters.LookAt.Z;
+		} else {
+			curState.TargetYawLookAtOrigin[0] += curState.Parameters.Parameters.LookAt.X;
+			curState.TargetYawLookAtOrigin[1] += curState.Parameters.Parameters.LookAt.Y;
+			curState.TargetYawLookAtOrigin[2] += curState.Parameters.Parameters.LookAt.Z;
+		}
+
+		float difference[3];
+		VecSubtract<float, float, 3>(curState.TargetYawLookAtOrigin, player.Origin, difference);
+		double yaw = Atan2(difference[1], difference[0]) * M_RAD2DEG;
+		double z = player.Origin[2] - curState.TargetYawLookAtOrigin[2];
+		double pitch = 0;
+		if (z != 0) {
+			double xy = Distance<float, float, 2>(curState.TargetYawLookAtOrigin, player.Origin);
+
+			pitch = Atan2(z, xy) * M_RAD2DEG;
+		}
+
+		curState.TargetYawLookAtYaw = yaw;
+		curState.TargetYawLookAtPitch = NormalizeDeg(pitch);
+	}
+
 	static inline std::optional<uint16_t> ExactAngleConstraints(double vel_yaw, const CurrentState& curState)
 	{
 		if (curState.TargetYawOverrideActive)
@@ -532,6 +559,11 @@ namespace HLStrafe
 			{
 				if (curState.Parameters.Parameters.YawRange.HighestYaw == curState.Parameters.Parameters.YawRange.LowestYaw)
 					return std::optional(static_cast<uint16_t>(curState.Parameters.Parameters.YawRange.LowestYaw * M_INVU_DEG));
+			} break;
+
+			case HLTAS::ConstraintsType::LOOK_AT:
+			{
+				return std::optional(static_cast<uint16_t>(curState.TargetYawLookAtYaw * M_INVU_DEG));
 			} break;
 
 			default:
@@ -609,6 +641,14 @@ namespace HLStrafe
 				return VCT::AngleConstraints(
 					static_cast<int>(curState.Parameters.Parameters.YawRange.LowestYaw * M_INVU_DEG),
 					static_cast<int>(curState.Parameters.Parameters.YawRange.HighestYaw * M_INVU_DEG)
+				);
+			} break;
+
+			case HLTAS::ConstraintsType::LOOK_AT:
+			{
+				return VCT::AngleConstraints(
+					static_cast<int>(curState.TargetYawLookAtYaw * M_INVU_DEG),
+					static_cast<int>(curState.TargetYawLookAtYaw * M_INVU_DEG)
 				);
 			} break;
 
@@ -1963,6 +2003,11 @@ namespace HLStrafe
 		out.NextFrameIs0ms = false;
 
 		float yaw = static_cast<float>(NormalizeDeg(out.Yaw));
+		if (curState.Parameters.Type == HLTAS::ConstraintsType::LOOK_AT) {
+			UpdateLookAtViewangle(player, curState);
+			out.Yaw = curState.TargetYawLookAtYaw;
+			out.Pitch = curState.TargetYawLookAtPitch;
+		}
 		if (curState.ChangeYawOver > 0) {
 			float targetValue = static_cast<float>(NormalizeDeg(curState.ChangeYawFinalValue));
 			float difference = static_cast<float>(GetAngleDifference(yaw, targetValue));
