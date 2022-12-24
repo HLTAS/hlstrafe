@@ -500,7 +500,7 @@ namespace HLStrafe
 
 	void UpdateLookAtViewangle(const PlayerData& player, CurrentState& curState)
 	{
-		if (curState.Parameters.Parameters.LookAt.Entity < 0) {
+		if (curState.Parameters.Parameters.LookAt.Entity == 0) {
 			curState.TargetYawLookAtOrigin[0] = curState.Parameters.Parameters.LookAt.X;
 			curState.TargetYawLookAtOrigin[1] = curState.Parameters.Parameters.LookAt.Y;
 			curState.TargetYawLookAtOrigin[2] = curState.Parameters.Parameters.LookAt.Z;
