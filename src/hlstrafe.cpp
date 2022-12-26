@@ -2167,6 +2167,14 @@ namespace HLStrafe
 			VecScale<float, 2>(playerCopy.Velocity, (100.0 - (playerCopy.StaminaTime / 1000.0) * 19.0) / 100.0, playerCopy.Velocity);
 
 		CheckVelocity(playerCopy, vars);
+
+		if (curState.Parameters.Type == HLTAS::ConstraintsType::LOOK_AT) {
+			auto playerCopy2 = PlayerData(playerCopy); // trace origin after Strafe() before it happens
+			Strafe(playerCopy2, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, true, curState, traceFunc, pointContentsFunc, version, out.fractions, out.normalzs);
+			UpdateLookAtViewangle(playerCopy2, curState);
+			out.Pitch = curState.TargetYawLookAtPitch;
+		}
+
 		postype = Strafe(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, true, curState, traceFunc, pointContentsFunc, version, out.fractions, out.normalzs);
 
 		CheckIfNextFrameShouldBe0ms(playerCopy, vars, frame, postype, out, strafeButtons, useGivenButtons, curState, traceFunc, pointContentsFunc, version);
@@ -2174,12 +2182,6 @@ namespace HLStrafe
 		//EngineMsg("p po %f\t%f\t%f\t%f\t%f\t%f\n", playerCopy.Origin[0], playerCopy.Origin[1], playerCopy.Origin[2], playerCopy.Velocity[0], playerCopy.Velocity[1], playerCopy.Velocity[2]);
 		curState.Jump = out.Jump;
 		curState.Duck = out.Duck;
-
-		if (curState.Parameters.Type == HLTAS::ConstraintsType::LOOK_AT) {
-			UpdateLookAtViewangle(playerCopy, curState);
-			out.Yaw = curState.TargetYawLookAtYaw;
-			out.Pitch = curState.TargetYawLookAtPitch;
-		}
 
 		playerCopy.Viewangles[0] = out.Pitch;
 		playerCopy.Viewangles[1] = out.Yaw;
