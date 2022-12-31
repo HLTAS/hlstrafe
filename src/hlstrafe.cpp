@@ -500,15 +500,9 @@ namespace HLStrafe
 
 	void UpdateLookAtViewangle(const PlayerData& player, CurrentState& curState)
 	{
-		if (curState.Parameters.Parameters.LookAt.Entity == 0) {
-			curState.TargetYawLookAtOrigin[0] = curState.Parameters.Parameters.LookAt.X;
-			curState.TargetYawLookAtOrigin[1] = curState.Parameters.Parameters.LookAt.Y;
-			curState.TargetYawLookAtOrigin[2] = curState.Parameters.Parameters.LookAt.Z;
-		} else {
-			curState.TargetYawLookAtOrigin[0] += curState.Parameters.Parameters.LookAt.X;
-			curState.TargetYawLookAtOrigin[1] += curState.Parameters.Parameters.LookAt.Y;
-			curState.TargetYawLookAtOrigin[2] += curState.Parameters.Parameters.LookAt.Z;
-		}
+		curState.TargetYawLookAtOrigin[0] += curState.Parameters.Parameters.LookAt.X;
+		curState.TargetYawLookAtOrigin[1] += curState.Parameters.Parameters.LookAt.Y;
+		curState.TargetYawLookAtOrigin[2] += curState.Parameters.Parameters.LookAt.Z;
 
 		float difference[3];
 		VecSubtract<float, float, 3>(curState.TargetYawLookAtOrigin, player.Origin, difference);
