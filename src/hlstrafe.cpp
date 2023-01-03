@@ -2052,6 +2052,9 @@ namespace HLStrafe
 				case HLTAS::ConstraintsType::YAW_RANGE:
 					constraints = 0.1;
 					break;
+				case HLTAS::ConstraintsType::LOOK_AT:
+					constraints = 0.1;
+					break;
 				default:
 					assert(false);
 					break;
