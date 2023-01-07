@@ -513,11 +513,9 @@ namespace HLStrafe
 			yaw = Atan2(difference[1], difference[0]) * M_RAD2DEG;
 
 		double z = player.Origin[2] - curState.TargetYawLookAtOrigin[2];
-		if (z) {
-			double xy = Distance<float, float, 2>(curState.TargetYawLookAtOrigin, player.Origin);
-			if (xy)
-				pitch = Atan2(z, xy) * M_RAD2DEG;
-		}
+		double xy = Distance<float, float, 2>(curState.TargetYawLookAtOrigin, player.Origin);
+		if (z && xy)
+			pitch = Atan2(z, xy) * M_RAD2DEG;
 
 		curState.TargetYawLookAtYaw = yaw;
 		curState.TargetYawLookAtPitch = NormalizeDeg(pitch);
