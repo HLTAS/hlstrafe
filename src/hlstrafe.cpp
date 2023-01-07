@@ -500,21 +500,22 @@ namespace HLStrafe
 
 	void UpdateLookAtViewangle(const PlayerData& player, CurrentState& curState)
 	{
-		curState.TargetYawLookAtOrigin[0] += curState.Parameters.Parameters.LookAt.X;
-		curState.TargetYawLookAtOrigin[1] += curState.Parameters.Parameters.LookAt.Y;
-		curState.TargetYawLookAtOrigin[2] += curState.Parameters.Parameters.LookAt.Z;
+		float target[3];
+		target[0] = curState.TargetYawLookAtOrigin[0] + curState.Parameters.Parameters.LookAt.X;
+		target[1] = curState.TargetYawLookAtOrigin[1] + curState.Parameters.Parameters.LookAt.Y;
+		target[2] = curState.TargetYawLookAtOrigin[2] + curState.Parameters.Parameters.LookAt.Z;
 
 		float difference[3];
-		VecSubtract<float, float, 3>(curState.TargetYawLookAtOrigin, player.Origin, difference);
+		VecSubtract<float, float, 3>(target, player.Origin, difference);
 
 		double yaw = 0;
 		double pitch = 0;
-		if (difference[0] && difference[1])
+		if (difference[0])
 			yaw = Atan2(difference[1], difference[0]) * M_RAD2DEG;
 
-		double z = player.Origin[2] - curState.TargetYawLookAtOrigin[2];
-		double xy = Distance<float, float, 2>(curState.TargetYawLookAtOrigin, player.Origin);
-		if (z && xy)
+		double z = player.Origin[2] - target[2];
+		double xy = Distance<float, float, 2>(target, player.Origin);
+		if (xy)
 			pitch = Atan2(z, xy) * M_RAD2DEG;
 
 		curState.TargetYawLookAtYaw = yaw;
@@ -2052,10 +2053,10 @@ namespace HLStrafe
 					constraints = curState.Parameters.Parameters.Yaw.Constraints;
 					break;
 				case HLTAS::ConstraintsType::YAW_RANGE:
-					constraints = 0.1;
+					constraints = 0;
 					break;
 				case HLTAS::ConstraintsType::LOOK_AT:
-					constraints = 0.1;
+					constraints = 0;
 					break;
 				default:
 					assert(false);
@@ -2168,10 +2169,11 @@ namespace HLStrafe
 		CheckVelocity(playerCopy, vars);
 
 		if (curState.Parameters.Type == HLTAS::ConstraintsType::LOOK_AT) {
-			auto playerCopy2 = PlayerData(playerCopy); // trace origin after Strafe() before it happens
+			auto playerCopy2 = PlayerData(playerCopy);
 			Strafe(playerCopy2, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, true, curState, traceFunc, pointContentsFunc, version, out.fractions, out.normalzs);
 			UpdateLookAtViewangle(playerCopy2, curState);
-			out.Pitch = curState.TargetYawLookAtPitch;
+			if (!frame.PitchPresent)
+				out.Pitch = curState.TargetYawLookAtPitch;
 		}
 
 		postype = Strafe(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, true, curState, traceFunc, pointContentsFunc, version, out.fractions, out.normalzs);
