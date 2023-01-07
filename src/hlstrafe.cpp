@@ -508,15 +508,10 @@ namespace HLStrafe
 		float difference[3];
 		VecSubtract<float, float, 3>(target, player.Origin, difference);
 
-		double yaw = 0;
-		double pitch = 0;
-		if (difference[0])
-			yaw = Atan2(difference[1], difference[0]) * M_RAD2DEG;
-
+		double yaw = Atan2(difference[1], difference[0]) * M_RAD2DEG;
 		double z = player.Origin[2] - target[2];
 		double xy = Distance<float, float, 2>(target, player.Origin);
-		if (xy)
-			pitch = Atan2(z, xy) * M_RAD2DEG;
+		double pitch = Atan2(z, xy) * M_RAD2DEG;
 
 		curState.TargetYawLookAtYaw = yaw;
 		curState.TargetYawLookAtPitch = NormalizeDeg(pitch);
