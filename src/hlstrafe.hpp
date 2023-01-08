@@ -160,6 +160,11 @@ namespace HLStrafe
 
 		// Number of frames for LEFT_RIGHT or RIGHT_LEFT which goes from 0 to (count - 1).
 		unsigned StrafeCycleFrameCount;
+
+		// target_yaw look_at
+		float TargetYawLookAtYaw;
+		float TargetYawLookAtPitch;
+		float TargetYawLookAtOrigin[3];
 	};
 
 	struct TraceResult {

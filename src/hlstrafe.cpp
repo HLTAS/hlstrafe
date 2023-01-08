@@ -498,6 +498,25 @@ namespace HLStrafe
 		avec[1] = wishvel[1];
 	}
 
+	void UpdateLookAtViewangle(const PlayerData& player, CurrentState& curState)
+	{
+		float target[3];
+		target[0] = curState.TargetYawLookAtOrigin[0] + curState.Parameters.Parameters.LookAt.X;
+		target[1] = curState.TargetYawLookAtOrigin[1] + curState.Parameters.Parameters.LookAt.Y;
+		target[2] = curState.TargetYawLookAtOrigin[2] + curState.Parameters.Parameters.LookAt.Z;
+
+		float difference[3];
+		VecSubtract<float, float, 3>(target, player.Origin, difference);
+
+		double yaw = Atan2(difference[1], difference[0]) * M_RAD2DEG;
+		double z = player.Origin[2] - target[2];
+		double xy = Distance<float, float, 2>(target, player.Origin);
+		double pitch = Atan2(z, xy) * M_RAD2DEG;
+
+		curState.TargetYawLookAtYaw = yaw;
+		curState.TargetYawLookAtPitch = NormalizeDeg(pitch);
+	}
+
 	static inline std::optional<uint16_t> ExactAngleConstraints(double vel_yaw, const CurrentState& curState)
 	{
 		if (curState.TargetYawOverrideActive)
@@ -532,6 +551,11 @@ namespace HLStrafe
 			{
 				if (curState.Parameters.Parameters.YawRange.HighestYaw == curState.Parameters.Parameters.YawRange.LowestYaw)
 					return std::optional(static_cast<uint16_t>(curState.Parameters.Parameters.YawRange.LowestYaw * M_INVU_DEG));
+			} break;
+
+			case HLTAS::ConstraintsType::LOOK_AT:
+			{
+				return std::optional(static_cast<uint16_t>(curState.TargetYawLookAtYaw * M_INVU_DEG));
 			} break;
 
 			default:
@@ -609,6 +633,14 @@ namespace HLStrafe
 				return VCT::AngleConstraints(
 					static_cast<int>(curState.Parameters.Parameters.YawRange.LowestYaw * M_INVU_DEG),
 					static_cast<int>(curState.Parameters.Parameters.YawRange.HighestYaw * M_INVU_DEG)
+				);
+			} break;
+
+			case HLTAS::ConstraintsType::LOOK_AT:
+			{
+				return VCT::AngleConstraints(
+					static_cast<int>(curState.TargetYawLookAtYaw * M_INVU_DEG),
+					static_cast<int>(curState.TargetYawLookAtYaw * M_INVU_DEG)
 				);
 			} break;
 
@@ -2016,7 +2048,10 @@ namespace HLStrafe
 					constraints = curState.Parameters.Parameters.Yaw.Constraints;
 					break;
 				case HLTAS::ConstraintsType::YAW_RANGE:
-					constraints = 0.1;
+					constraints = 0;
+					break;
+				case HLTAS::ConstraintsType::LOOK_AT:
+					constraints = 0;
 					break;
 				default:
 					assert(false);
@@ -2127,6 +2162,15 @@ namespace HLStrafe
 			VecScale<float, 2>(playerCopy.Velocity, (100.0 - (playerCopy.StaminaTime / 1000.0) * 19.0) / 100.0, playerCopy.Velocity);
 
 		CheckVelocity(playerCopy, vars);
+
+		if (curState.Parameters.Type == HLTAS::ConstraintsType::LOOK_AT) {
+			auto playerCopy2 = PlayerData(playerCopy);
+			Strafe(playerCopy2, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, true, curState, traceFunc, pointContentsFunc, version, out.fractions, out.normalzs);
+			UpdateLookAtViewangle(playerCopy2, curState);
+			if (!frame.PitchPresent)
+				out.Pitch = curState.TargetYawLookAtPitch;
+		}
+
 		postype = Strafe(playerCopy, vars, postype, frame, out, reduceWishspeed, strafeButtons, useGivenButtons, true, curState, traceFunc, pointContentsFunc, version, out.fractions, out.normalzs);
 
 		CheckIfNextFrameShouldBe0ms(playerCopy, vars, frame, postype, out, strafeButtons, useGivenButtons, curState, traceFunc, pointContentsFunc, version);
