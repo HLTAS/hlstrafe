@@ -509,7 +509,7 @@ namespace HLStrafe
 		VecSubtract<float, float, 3>(target, player.Origin, difference);
 
 		double yaw = Atan2(difference[1], difference[0]) * M_RAD2DEG;
-		double z = player.Origin[2] - target[2];
+		double z = (player.Origin[2] + 28 - (16 * player.Ducking)) - target[2];
 		double xy = Distance<float, float, 2>(target, player.Origin);
 		double pitch = Atan2(z, xy) * M_RAD2DEG;
 
