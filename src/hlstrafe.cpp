@@ -501,9 +501,9 @@ namespace HLStrafe
 	void UpdateLookAtViewangle(const PlayerData& player, CurrentState& curState)
 	{
 		float target[3];
-		target[0] = curState.TargetYawLookAtOrigin[0] + curState.Parameters.Parameters.LookAt.X;
-		target[1] = curState.TargetYawLookAtOrigin[1] + curState.Parameters.Parameters.LookAt.Y;
-		target[2] = curState.TargetYawLookAtOrigin[2] + curState.Parameters.Parameters.LookAt.Z;
+		target[0] = static_cast<float>(curState.TargetYawLookAtOrigin[0] + curState.Parameters.Parameters.LookAt.X);
+		target[1] = static_cast<float>(curState.TargetYawLookAtOrigin[1] + curState.Parameters.Parameters.LookAt.Y);
+		target[2] = static_cast<float>(curState.TargetYawLookAtOrigin[2] + curState.Parameters.Parameters.LookAt.Z);
 
 		float difference[3];
 		VecSubtract<float, float, 3>(target, player.Origin, difference);
@@ -513,8 +513,8 @@ namespace HLStrafe
 		double xy = Distance<float, float, 2>(target, player.Origin);
 		double pitch = Atan2(z, xy) * M_RAD2DEG;
 
-		curState.TargetYawLookAtYaw = yaw;
-		curState.TargetYawLookAtPitch = NormalizeDeg(pitch);
+		curState.TargetYawLookAtYaw = static_cast<float>(yaw);
+		curState.TargetYawLookAtPitch = static_cast<float>(NormalizeDeg(pitch));
 	}
 
 	static inline std::optional<uint16_t> ExactAngleConstraints(double vel_yaw, const CurrentState& curState)
