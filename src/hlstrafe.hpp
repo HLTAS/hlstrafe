@@ -202,7 +202,7 @@ namespace HLStrafe
 	/*
 		Predicts the changes made in past 0ms frames (since those frames didn't run on the server yet).
 	*/
-	PositionType PredictPast0msFrames(PlayerData& player, const MovementVars& vars, PositionType postype, const ProcessedFrame& out, const CurrentState& curState, TraceFunc traceFunc, PointContentsFunc pointContentsFunc);
+	PositionType PredictPast0msFrames(PlayerData& player, const MovementVars& vars, PositionType postype, const ProcessedFrame& out, const CurrentState& curState, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version);
 
 	/*
 		Checks if the next frame needs to be 0ms.
@@ -222,7 +222,7 @@ namespace HLStrafe
 	/*
 		Figures out the player's position type and, if necessary, updates player.Origin and curState.
 	*/
-	PositionType GetPositionType(PlayerData& player, TraceFunc traceFunc, PointContentsFunc pointContentsFunc);
+	PositionType GetPositionType(PlayerData& player, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version);
 
 	/*
 		Limits the velocity components to maxvelocity.
@@ -232,13 +232,13 @@ namespace HLStrafe
 	/*
 		Changes the player data the same way as PM_Duck would, returns a new postype.
 	*/
-	PositionType PredictDuck(PlayerData& player, const MovementVars& vars, PositionType postype, CurrentState& curState, const ProcessedFrame& out, TraceFunc traceFunc, PointContentsFunc pointContentsFunc);
+	PositionType PredictDuck(PlayerData& player, const MovementVars& vars, PositionType postype, CurrentState& curState, const ProcessedFrame& out, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version);
 
 	/*
 		Changes the player data the same way as PM_Jump would, returns a new postype.
 		Changes the processed frame in case of some duck-when autofuncs.
 	*/
-	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, bool decreaseDwjTimes = false);
+	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version, bool decreaseDwjTimes = false);
 
 	/*
 		Applies the ground friction the same way as PM_Friction would, changing player.Velocity.
@@ -333,7 +333,7 @@ namespace HLStrafe
 		Velocity, Basevelocity, Origin;
 		Frametime, Accelerate or Airaccelerate, EntFriction, EntGravity, Gravity.
 	*/
-	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, bool calcVelocity = false, const double a[2] = nullptr, float fractions[4] = nullptr, float normalzs[4] = nullptr);
+	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version, bool calcVelocity = false, const double a[2] = nullptr, float fractions[4] = nullptr, float normalzs[4] = nullptr);
 
 	/*
 		Helpers for the movement prediction, do exactly what PM_FlyMove and PM_ClipVelocity do.

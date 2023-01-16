@@ -169,7 +169,7 @@ namespace HLStrafe
 		player.Velocity[1] += static_cast<float>(a[1] * tmp);
 	}
 
-	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, bool calcVelocity, const double a[2], float fractions[4], float normalzs[4])
+	PositionType Move(PlayerData& player, const MovementVars& vars, PositionType postype, double wishspeed, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version, bool calcVelocity, const double a[2], float fractions[4], float normalzs[4])
 	{
 		assert(postype != PositionType::WATER);
 
@@ -260,7 +260,7 @@ namespace HLStrafe
 			FlyMove(player, vars, postype, traceFunc, fractions, normalzs);
 		}
 
-		postype = GetPositionType(player, traceFunc, pointContentsFunc);
+		postype = GetPositionType(player, traceFunc, pointContentsFunc, version);
 		VecSubtract<float, float, 3>(player.Velocity, player.Basevelocity, player.Velocity);
 		CheckVelocity(player, vars);
 		if (postype != PositionType::GROUND && postype != PositionType::WATER) {
@@ -1252,29 +1252,32 @@ namespace HLStrafe
 		}
 	}
 
-	PositionType GetPositionType(PlayerData& player, TraceFunc traceFunc, PointContentsFunc pointContentsFunc)
+	PositionType GetPositionType(PlayerData& player, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version)
 	{
-		// Check water. If we're under water, return here.
-		const int CONTENTS_WATER = -3;
-		const int CONTENTS_TRANSLUCENT = -15;
-
 		float point[3];
-		VecCopy<float, 3>(player.Origin, point);
 
-		// Pick a spot just above the players feet.
-		point[0] += (player.Ducking ? (VEC_DUCK_HULL_MIN[0] + VEC_DUCK_HULL_MAX[0]) : (VEC_HULL_MIN[0] + VEC_HULL_MAX[0])) * 0.5f;
-		point[1] += (player.Ducking ? (VEC_DUCK_HULL_MIN[1] + VEC_DUCK_HULL_MAX[1]) : (VEC_HULL_MIN[1] + VEC_HULL_MAX[1])) * 0.5f;
-		point[2] += ((player.Ducking ? VEC_DUCK_HULL_MIN[2] : VEC_HULL_MIN[2]) + 1);
+		if (version > 4) {
+			// Check water. If we're under water, return here.
+			const int CONTENTS_WATER = -3;
+			const int CONTENTS_TRANSLUCENT = -15;
 
-		int contents = pointContentsFunc(point);
+			VecCopy<float, 3>(player.Origin, point);
 
-		if (contents <= CONTENTS_WATER && contents > CONTENTS_TRANSLUCENT) {
-			// Now check a point that is at the player hull midpoint.
-			point[2] = player.Origin[2] + (player.Ducking ? (VEC_DUCK_HULL_MIN[2] + VEC_DUCK_HULL_MAX[2]) : (VEC_HULL_MIN[2] + VEC_HULL_MAX[2])) * 0.5f;
-			contents = pointContentsFunc(point);
-			// If that point is also under water...
-			if (contents <= CONTENTS_WATER && contents > CONTENTS_TRANSLUCENT)
-				return PositionType::WATER;
+			// Pick a spot just above the players feet.
+			point[0] += (player.Ducking ? (VEC_DUCK_HULL_MIN[0] + VEC_DUCK_HULL_MAX[0]) : (VEC_HULL_MIN[0] + VEC_HULL_MAX[0])) * 0.5f;
+			point[1] += (player.Ducking ? (VEC_DUCK_HULL_MIN[1] + VEC_DUCK_HULL_MAX[1]) : (VEC_HULL_MIN[1] + VEC_HULL_MAX[1])) * 0.5f;
+			point[2] += ((player.Ducking ? VEC_DUCK_HULL_MIN[2] : VEC_HULL_MIN[2]) + 1);
+
+			int contents = pointContentsFunc(point);
+
+			if (contents <= CONTENTS_WATER && contents > CONTENTS_TRANSLUCENT) {
+				// Now check a point that is at the player hull midpoint.
+				point[2] = player.Origin[2] + (player.Ducking ? (VEC_DUCK_HULL_MIN[2] + VEC_DUCK_HULL_MAX[2]) : (VEC_HULL_MIN[2] + VEC_HULL_MAX[2])) * 0.5f;
+				contents = pointContentsFunc(point);
+				// If that point is also under water...
+				if (contents <= CONTENTS_WATER && contents > CONTENTS_TRANSLUCENT)
+					return PositionType::WATER;
+			}
 		}
 
 		// Check ground.
@@ -1303,7 +1306,7 @@ namespace HLStrafe
 		}
 	}
 
-	PositionType PredictDuck(PlayerData& player, const MovementVars& vars, PositionType postype, CurrentState& curState, const ProcessedFrame& out, TraceFunc traceFunc, PointContentsFunc pointContentsFunc)
+	PositionType PredictDuck(PlayerData& player, const MovementVars& vars, PositionType postype, CurrentState& curState, const ProcessedFrame& out, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version)
 	{
 		if (!out.Duck
 			&& !player.InDuckAnimation
@@ -1332,7 +1335,7 @@ namespace HLStrafe
 					for (std::size_t i = 0; i < 3; ++i)
 						player.Origin[i] -= (VEC_DUCK_HULL_MIN[i] - VEC_HULL_MIN[i]);
 					// Is PM_FixPlayerCrouchStuck() prediction needed here?
-					return GetPositionType(player, traceFunc, pointContentsFunc);
+					return GetPositionType(player, traceFunc, pointContentsFunc, version);
 				}
 			}
 		} else {
@@ -1355,7 +1358,7 @@ namespace HLStrafe
 					if (vars.Frametime == 0.f)
 						curState.PredictThis = State0ms::UNDUCKED;
 
-					return GetPositionType(player, traceFunc, pointContentsFunc);
+					return GetPositionType(player, traceFunc, pointContentsFunc, version);
 				}
 			}
 		}
@@ -1363,7 +1366,7 @@ namespace HLStrafe
 		return postype;
 	}
 
-	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, bool decreaseDwjTimes)
+	PositionType PredictJump(PlayerData& player, PositionType postype, const MovementVars& vars, const HLTAS::Frame& frame, CurrentState& curState, ProcessedFrame& out, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version, bool decreaseDwjTimes)
 	{
 		assert(postype != PositionType::WATER);
 
@@ -1381,7 +1384,7 @@ namespace HLStrafe
 			auto curState_backup = CurrentState(curState);
 
 			out.Duck = true;
-			postype = PredictDuck(player, vars, postype, curState, out, traceFunc, pointContentsFunc);
+			postype = PredictDuck(player, vars, postype, curState, out, traceFunc, pointContentsFunc, version);
 			if (postype != PositionType::GROUND) {
 				out = out_backup;
 				curState = curState_backup;
@@ -1512,7 +1515,7 @@ namespace HLStrafe
 		auto curStateCopy = CurrentState(curState);
 		if (player.Ducking) {
 			outCopy.Duck = false;
-			postype = PredictDuck(playerCopy, vars, postype, curStateCopy, outCopy, traceFunc, pointContentsFunc);
+			postype = PredictDuck(playerCopy, vars, postype, curStateCopy, outCopy, traceFunc, pointContentsFunc, version);
 
 			// If we're still ducking, then it is too late to jumpbug. Prepare for the inevitable.
 			if (playerCopy.Ducking)
@@ -1570,7 +1573,7 @@ namespace HLStrafe
 		auto playerCopy = PlayerData(player);
 		auto out_temp = ProcessedFrame(out);
 		auto curStateCopy = CurrentState(curState);
-		postype = PredictDuck(playerCopy, vars, postype, curStateCopy, out, traceFunc, pointContentsFunc);
+		postype = PredictDuck(playerCopy, vars, postype, curStateCopy, out, traceFunc, pointContentsFunc, version);
 		// If we cannot unduck, there's nothing we can change.
 		if (playerCopy.Ducking)
 			return;
@@ -1585,7 +1588,7 @@ namespace HLStrafe
 		out_temp = ProcessedFrame(out);
 		out_temp.Duck = true;
 		curStateCopy = CurrentState(curState);
-		postype = PredictDuck(playerCopy, vars, postype, curStateCopy, out_temp, traceFunc, pointContentsFunc);
+		postype = PredictDuck(playerCopy, vars, postype, curStateCopy, out_temp, traceFunc, pointContentsFunc, version);
 		Strafe(playerCopy, vars, postype, frame, out_temp, false, strafeButtons, useGivenButtons, true, curStateCopy, traceFunc, pointContentsFunc, version, fractionsDucked);
 
 		for (int i = 0; i < 4; ++i) {
@@ -1624,7 +1627,7 @@ namespace HLStrafe
 		auto playerCopy = PlayerData(player);
 		auto out_temp = ProcessedFrame(out);
 		auto curStateCopy = CurrentState(curState);
-		postype = PredictDuck(playerCopy, vars, postype, curStateCopy, out_temp, traceFunc, pointContentsFunc);
+		postype = PredictDuck(playerCopy, vars, postype, curStateCopy, out_temp, traceFunc, pointContentsFunc, version);
 		// If we cannot unduck, there's nothing we can change.
 		if (playerCopy.Ducking)
 			return;
@@ -1717,7 +1720,7 @@ namespace HLStrafe
 		out_temp = ProcessedFrame(out);
 		curStateCopy2 = CurrentState(curStateCopy);
 		air.InDuckAnimation = true;
-		postype = PredictDuck(air, vars, postype, curStateCopy2, out_temp, traceFunc, pointContentsFunc);
+		postype = PredictDuck(air, vars, postype, curStateCopy2, out_temp, traceFunc, pointContentsFunc, version);
 		Strafe(air, vars, postype, frame, out_temp, false, strafeButtons, useGivenButtons, false, curStateCopy2, traceFunc, pointContentsFunc, version);
 
 		auto l_gr = Length<float, 2>(ground.Velocity);
@@ -1757,7 +1760,7 @@ namespace HLStrafe
 		out_temp = ProcessedFrame(out);
 		out_temp.Jump = true;
 		curStateCopy = CurrentState(curState);
-		postype = PredictJump(air, postype, vars, frame, curStateCopy, out_temp, traceFunc, pointContentsFunc);
+		postype = PredictJump(air, postype, vars, frame, curStateCopy, out_temp, traceFunc, pointContentsFunc, version);
 		Strafe(air, vars, postype, frame, out_temp, reduceWishspeed && !curStateCopy.LgagstFullMaxspeed, strafeButtons, useGivenButtons, false, curStateCopy, traceFunc, pointContentsFunc, version);
 
 		auto l_gr = Length<float, 2>(ground.Velocity);
@@ -1904,12 +1907,12 @@ namespace HLStrafe
 		}
 
 		if (predictOrigin)
-			postype = Move(player, vars, postype, wishspeed, traceFunc, pointContentsFunc, !strafed, a, fractions, normalzs);
+			postype = Move(player, vars, postype, wishspeed, traceFunc, pointContentsFunc, version, !strafed, a, fractions, normalzs);
 
 		return postype;
 	}
 
-	PositionType PredictPast0msFrames(PlayerData& player, const MovementVars& vars, PositionType postype, const ProcessedFrame& out, const CurrentState& curState, TraceFunc traceFunc, PointContentsFunc pointContentsFunc)
+	PositionType PredictPast0msFrames(PlayerData& player, const MovementVars& vars, PositionType postype, const ProcessedFrame& out, const CurrentState& curState, TraceFunc traceFunc, PointContentsFunc pointContentsFunc, unsigned version)
 	{
 		auto out_copy = ProcessedFrame{ out };
 		auto curState_copy = CurrentState{ curState };
@@ -1917,16 +1920,16 @@ namespace HLStrafe
 		if (curState.PredictThis == State0ms::DUCKED) {
 			out_copy.Duck = true;
 			curState_copy.Duck = false;
-			postype = PredictDuck(player, vars, postype, curState_copy, out_copy, traceFunc, pointContentsFunc);
+			postype = PredictDuck(player, vars, postype, curState_copy, out_copy, traceFunc, pointContentsFunc, version);
 		} else if (curState.PredictThis == State0ms::UNDUCKED) {
 			out_copy.Duck = false;
-			postype = PredictDuck(player, vars, postype, curState_copy, out_copy, traceFunc, pointContentsFunc);
+			postype = PredictDuck(player, vars, postype, curState_copy, out_copy, traceFunc, pointContentsFunc, version);
 		} else if (curState.PredictThis == State0ms::UNDUCKED_AND_DUCKED) {
 			out_copy.Duck = false;
-			postype = PredictDuck(player, vars, postype, curState_copy, out_copy, traceFunc, pointContentsFunc);
+			postype = PredictDuck(player, vars, postype, curState_copy, out_copy, traceFunc, pointContentsFunc, version);
 			out_copy.Duck = true;
 			curState_copy.Duck = false;
-			postype = PredictDuck(player, vars, postype, curState_copy, out_copy, traceFunc, pointContentsFunc);
+			postype = PredictDuck(player, vars, postype, curState_copy, out_copy, traceFunc, pointContentsFunc, version);
 		}
 
 		return postype;
@@ -1955,7 +1958,7 @@ namespace HLStrafe
 			out_temp = ProcessedFrame(out);
 			curStateCopy = CurrentState(curState);
 			air.InDuckAnimation = true;
-			postype = PredictDuck(air, vars, postype, curStateCopy, out_temp, traceFunc, pointContentsFunc);
+			postype = PredictDuck(air, vars, postype, curStateCopy, out_temp, traceFunc, pointContentsFunc, version);
 			Strafe(air, vars, postype, frame, out_temp, false, strafeButtons, useGivenButtons, false, curStateCopy, traceFunc, pointContentsFunc, version);
 
 			auto l_gr = Length<float, 2>(ground.Velocity);
@@ -2116,13 +2119,13 @@ namespace HLStrafe
 
 		//EngineMsg("p pr %f\t%f\t%f\t%f\t%f\t%f\n", player.Origin[0], player.Origin[1], player.Origin[2], player.Velocity[0], player.Velocity[1], player.Velocity[2]);
 		auto playerCopy = PlayerData(player); // Our copy that we will mess with.
-		auto postype = GetPositionType(playerCopy, traceFunc, pointContentsFunc);
+		auto postype = GetPositionType(playerCopy, traceFunc, pointContentsFunc, version);
 		if (postype == PositionType::WATER) {
 			VecCopy<float, 2>(player.Velocity, curState.LastVelocity);
 			return out;
 		}
 
-		postype = PredictPast0msFrames(playerCopy, vars, postype, out, curState, traceFunc, pointContentsFunc);
+		postype = PredictPast0msFrames(playerCopy, vars, postype, out, curState, traceFunc, pointContentsFunc, version);
 		// We only need to set PredictThis on 0ms frames and for that we need to know the previous state.
 		// Otherwise, reset it right here.
 		if (vars.Frametime != 0.f)
@@ -2145,7 +2148,7 @@ namespace HLStrafe
 		// This has to be before PredictDuck() because it may do something funky to the conditions
 		reduceWishspeed = reduceWishspeed || (vars.DuckTapSlow && (playerCopy.InDuckAnimation || out.Duck));
 		
-		postype = PredictDuck(playerCopy, vars, postype, curState, out, traceFunc, pointContentsFunc);
+		postype = PredictDuck(playerCopy, vars, postype, curState, out, traceFunc, pointContentsFunc, version);
 
 		// This has to be after PredictDuck() since we may have ducktapped,
 		// if this messes with Lgagst-ducktap() then it's the user's problem.
