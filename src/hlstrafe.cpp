@@ -431,25 +431,6 @@ namespace HLStrafe
 			return HLTAS::Button::BACK;
 	}
 
-	static inline void GetViewVec(float yaw, float pitch, float forward[3], float up[3], float right[3])
-	{
-		// For the current use, forward and right assume pitch 0
-		float sy = static_cast<float>(std::sin(yaw * (M_PI * 2 / 360)));
-		float cy = static_cast<float>(std::cos(yaw * (M_PI * 2 / 360)));
-		float sp = static_cast<float>(std::sin(pitch * (M_PI * 2 / 360)));
-		float cp = static_cast<float>(std::cos(pitch * (M_PI * 2 / 360)));
-
-		forward[0] = cy;
-		forward[1] = sy;
-		forward[2] = 0;
-		right[0] = sy;
-		right[1] = -cy;
-		right[2] = 0;
-		up[0] = cy * sp;
-		up[1] = sy * sp;
-		up[2] = cp;
-	}
-
 	static inline void GetAVec(float yaw, double wishspeed, HLTAS::Button buttons, double avec[2])
 	{
 		float sy = static_cast<float>(std::sin(yaw * (M_PI * 2 / 360)));
@@ -515,6 +496,30 @@ namespace HLStrafe
 
 		avec[0] = wishvel[0];
 		avec[1] = wishvel[1];
+	}
+
+	static inline void GetViewVec(float pitch, float yaw, float forward[3], float up[3], float right[3], bool type)
+	{
+		float sy = static_cast<float>(std::sin(yaw * (M_PI * 2 / 360)));
+		float cy = static_cast<float>(std::cos(yaw * (M_PI * 2 / 360)));
+		float sp = static_cast<float>(std::sin(pitch * (M_PI * 2 / 360)));
+		float cp = static_cast<float>(std::cos(pitch * (M_PI * 2 / 360)));
+
+		if (!type) {
+			forward[0] = cy;
+			forward[1] = sy;
+			forward[2] = 0;
+		} else {
+			forward[0] = cy * cp;
+			forward[1] = sy * cp;
+			forward[2] = -sp;
+		}
+		right[0] = sy;
+		right[1] = -cy;
+		right[2] = 0;
+		up[0] = cy * sp;
+		up[1] = sy * sp;
+		up[2] = cp;
 	}
 
 	void UpdateLookAtViewangle(const PlayerData& player, CurrentState& curState)
@@ -2015,6 +2020,15 @@ namespace HLStrafe
 		out.Upspeed = vars.Maxspeed;
 
 		out.NextFrameIs0ms = false;
+
+		switch (curState.Parameters.Parameters.LookAt.Action) {
+			case HLTAS::LookAtAction::ATTACK:
+				out.Attack1 = true;
+				break;
+			case HLTAS::LookAtAction::ATTACK2:
+				out.Attack2 = true;
+				break;
+		}
 
 		float yaw = static_cast<float>(NormalizeDeg(out.Yaw));
 		if (curState.ChangeYawOver > 0) {
