@@ -175,4 +175,28 @@ namespace HLStrafe
 		up[1] = sy * sp;
 		up[2] = cp;
 	}
+
+	inline void GetViewanglesTwoVec(float result[2], float view[3], float end[3])
+	{
+		auto diff_yaw = std::acos(
+			DotProduct<float, float, 2>(end, view) / (Length<float, 2>(end) * Length<float, 2>(view))) * M_RAD2DEG;
+
+		if (Atan2(end[1], end[0]) > Atan2(view[1], view[0]))
+			result[1] = -diff_yaw;
+		else
+			result[1] = diff_yaw;
+
+		end[0] = Length<float, 2>(end);
+		end[1] = end[2];
+		view[0] = Length<float, 2>(view);
+		view[1] = view[2];
+
+		auto diff_pitch = std::acos(
+			DotProduct<float, float, 2>(end, view) / (Length<float, 2>(end) * Length<float, 2>(view))) * M_RAD2DEG;
+
+		if (Atan2(end[1], end[0]) < Atan2(view[1], view[0]))
+			result[0] = -diff_pitch;
+		else
+			result[0] = diff_pitch;
+	}
 }
