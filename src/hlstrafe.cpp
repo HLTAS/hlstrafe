@@ -1997,6 +1997,18 @@ namespace HLStrafe
 
 		out.NextFrameIs0ms = false;
 
+		switch (curState.Parameters.Parameters.LookAt.Action) {
+			case HLTAS::LookAtAction::ATTACK:
+				out.Attack1 = true;
+				break;
+			case HLTAS::LookAtAction::ATTACK2:
+				out.Attack2 = true;
+				break;
+			case HLTAS::LookAtAction::NONE:
+			default:
+				break;
+		}
+
 		float yaw = static_cast<float>(NormalizeDeg(out.Yaw));
 		if (curState.ChangeYawOver > 0) {
 			float targetValue = static_cast<float>(NormalizeDeg(curState.ChangeYawFinalValue));

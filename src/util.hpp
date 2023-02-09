@@ -151,4 +151,54 @@ namespace HLStrafe
 	{
 		return std::atan2(a, b);
 	}
+
+	inline void GetViewVec(float pitch, float yaw, float forward[3], float up[3], float right[3], bool type)
+	{
+		float sy = static_cast<float>(std::sin(yaw * (M_PI * 2 / 360)));
+		float cy = static_cast<float>(std::cos(yaw * (M_PI * 2 / 360)));
+		float sp = static_cast<float>(std::sin(pitch * (M_PI * 2 / 360)));
+		float cp = static_cast<float>(std::cos(pitch * (M_PI * 2 / 360)));
+
+		if (!type) {
+			forward[0] = cy;
+			forward[1] = sy;
+			forward[2] = 0;
+		} else {
+			forward[0] = cy * cp;
+			forward[1] = sy * cp;
+			forward[2] = -sp;
+		}
+		right[0] = sy;
+		right[1] = -cy;
+		right[2] = 0;
+		up[0] = cy * sp;
+		up[1] = sy * sp;
+		up[2] = cp;
+	}
+
+	template<typename T1, typename T2, typename T3>
+	inline void GetViewanglesTwoVec(T1 result[2], T2 view[3], T3 end[3])
+	{
+		// Will mutate view and end, for now.
+		auto diff_yaw = std::acos(
+			DotProduct<T3, T2, 2>(end, view) / (Length<T3, 2>(end) * Length<T2, 2>(view)));
+
+		if (Atan2(end[1], end[0]) > Atan2(view[1], view[0]))
+			result[1] = -diff_yaw;
+		else
+			result[1] = diff_yaw;
+
+		end[0] = Length<T3, 2>(end);
+		end[1] = end[2];
+		view[0] = Length<T2, 2>(view);
+		view[1] = view[2];
+
+		auto diff_pitch = std::acos(
+			DotProduct<T3, T2, 2>(end, view) / (Length<T3, 2>(end) * Length<T2, 2>(view)));
+
+		if (Atan2(end[1], end[0]) < Atan2(view[1], view[0]))
+			result[0] = -diff_pitch;
+		else
+			result[0] = diff_pitch;
+	}
 }
