@@ -176,23 +176,25 @@ namespace HLStrafe
 		up[2] = cp;
 	}
 
-	inline void GetViewanglesTwoVec(float result[2], float view[3], float end[3])
+	template<typename T1, typename T2, typename T3>
+	inline void GetViewanglesTwoVec(T1 result[2], T2 view[3], T3 end[3])
 	{
+		// Will mutate view and end, for now.
 		auto diff_yaw = std::acos(
-			DotProduct<float, float, 2>(end, view) / (Length<float, 2>(end) * Length<float, 2>(view))) * M_RAD2DEG;
+			DotProduct<T3, T2, 2>(end, view) / (Length<T3, 2>(end) * Length<T2, 2>(view)));
 
 		if (Atan2(end[1], end[0]) > Atan2(view[1], view[0]))
 			result[1] = -diff_yaw;
 		else
 			result[1] = diff_yaw;
 
-		end[0] = Length<float, 2>(end);
+		end[0] = Length<T3, 2>(end);
 		end[1] = end[2];
-		view[0] = Length<float, 2>(view);
+		view[0] = Length<T2, 2>(view);
 		view[1] = view[2];
 
 		auto diff_pitch = std::acos(
-			DotProduct<float, float, 2>(end, view) / (Length<float, 2>(end) * Length<float, 2>(view))) * M_RAD2DEG;
+			DotProduct<T3, T2, 2>(end, view) / (Length<T3, 2>(end) * Length<T2, 2>(view)));
 
 		if (Atan2(end[1], end[0]) < Atan2(view[1], view[0]))
 			result[0] = -diff_pitch;
