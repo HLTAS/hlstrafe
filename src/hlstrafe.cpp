@@ -685,6 +685,12 @@ namespace HLStrafe
 			theta = right ? -theta : theta;
 
 			double yaw = vel_yaw - phi + theta;
+
+			if (curState.ConstantYawSpeed) {
+				auto max_yaw_delta = curState.ConstantYawSpeedValue * vars.Frametime;
+				yaw = (right ? curState.LastYaw - max_yaw_delta : curState.LastYaw + max_yaw_delta) * M_DEG2RAD;
+			}
+
 			yaws[0] = AngleModRad(yaw);
 			// Very rare case of yaw == anglemod(yaw).
 			if (yaws[0] == yaw) {
@@ -720,6 +726,13 @@ namespace HLStrafe
 			VecCopy<float, 2>(pl.Velocity, velocities[1]);
 		} else {
 			theta = right ? -theta : theta;
+
+			if (curState.ConstantYawSpeed) {
+				// Change vel_yaw in-place for convenience
+				// TODO: do correct math in case of target_yaw change.
+				auto max_yaw_delta = curState.ConstantYawSpeedValue * vars.Frametime;
+				vel_yaw = (right ? curState.LastYaw - max_yaw_delta : curState.LastYaw + max_yaw_delta) * M_DEG2RAD;
+			}
 
 			auto vel_yaw_for_constraints = vel_yaw;
 
@@ -1998,6 +2011,9 @@ namespace HLStrafe
 		out.NextFrameIs0ms = false;
 
 		float yaw = static_cast<float>(NormalizeDeg(out.Yaw));
+
+		curState.LastYaw = yaw;
+		
 		if (curState.ChangeYawOver > 0) {
 			float targetValue = static_cast<float>(NormalizeDeg(curState.ChangeYawFinalValue));
 			float difference = static_cast<float>(GetAngleDifference(yaw, targetValue));
