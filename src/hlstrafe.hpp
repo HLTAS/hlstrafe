@@ -165,6 +165,10 @@ namespace HLStrafe
 		float TargetYawLookAtYaw;
 		float TargetYawLookAtPitch;
 		float TargetYawLookAtOrigin[3];
+
+		// Constant yawspeed
+		bool ConstantYawSpeed;
+		float ConstantYawSpeedValue;
 	};
 
 	struct TraceResult {
