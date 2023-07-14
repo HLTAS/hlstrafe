@@ -687,9 +687,9 @@ namespace HLStrafe
 			double yaw = vel_yaw - phi + theta;
 
 			if (curState.ConstantYawSpeed) {
-				auto max_yaw_delta = curState.ConstantYawSpeedValue * vars.Frametime;
+				auto yaw_delta = curState.ConstantYawSpeedValue * vars.Frametime;
 				auto last_yaw = static_cast<float>(NormalizeDeg(player.Viewangles[1]));
-				yaw = (right ? last_yaw - max_yaw_delta : last_yaw + max_yaw_delta) * M_DEG2RAD;
+				yaw = (right ? last_yaw - yaw_delta : last_yaw + yaw_delta) * M_DEG2RAD;
 			}
 
 			yaws[0] = AngleModRad(yaw);
@@ -727,14 +727,6 @@ namespace HLStrafe
 			VecCopy<float, 2>(pl.Velocity, velocities[1]);
 		} else {
 			theta = right ? -theta : theta;
-
-			if (curState.ConstantYawSpeed) {
-				// Change vel_yaw in-place for convenience
-				// TODO: do correct math in case of target_yaw change, or not.
-				auto max_yaw_delta = curState.ConstantYawSpeedValue * vars.Frametime;
-				auto last_yaw = static_cast<float>(NormalizeDeg(player.Viewangles[1]));
-				vel_yaw = (right ? last_yaw - max_yaw_delta : last_yaw + max_yaw_delta) * M_DEG2RAD;
-			}
 
 			auto vel_yaw_for_constraints = vel_yaw;
 
@@ -784,6 +776,30 @@ namespace HLStrafe
 			}
 
 			// std::printf("player yaw: %.8f, accel yaw: %.8f, diff: %.16f\n", yaw, yaw + fs_angle, std::fabs(NormalizeRad(yaw + fs_angle - target_angle)));
+
+			if (curState.ConstantYawSpeed) {
+				auto max_yaw_delta = curState.ConstantYawSpeedValue * vars.Frametime;
+				auto last_yaw = player.Viewangles[1];
+				auto accel_angle = postype == PositionType::GROUND ? M_PI / 4 : M_PI / 2;
+
+				if (right) {
+					yaw = last_yaw - max_yaw_delta;
+					accel_angle = -accel_angle;
+				} else {
+					yaw = last_yaw + max_yaw_delta;
+				}
+
+				yaw = AngleModRad(yaw * M_DEG2RAD);
+
+				const auto& entry = VCTExactAngle::GetBestVector(vars, accel_angle, version);
+				S = entry.S;
+				F = entry.F;
+
+				fs_angle = NormalizeRad(Atan2(-S, F));
+
+				if (fs_angle < 0)
+					fs_angle += 2 * M_PI;
+			}
 
 			double avec[2] = { std::cos(yaw + fs_angle), std::sin(yaw + fs_angle) };
 			PlayerData pl = player;
@@ -2027,7 +2043,6 @@ namespace HLStrafe
 		out.NextFrameIs0ms = false;
 
 		float yaw = static_cast<float>(NormalizeDeg(out.Yaw));
-		
 		if (curState.ChangeYawOver > 0) {
 			float targetValue = static_cast<float>(NormalizeDeg(curState.ChangeYawFinalValue));
 			float difference = static_cast<float>(GetAngleDifference(yaw, targetValue));
