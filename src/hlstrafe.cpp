@@ -778,15 +778,15 @@ namespace HLStrafe
 			// std::printf("player yaw: %.8f, accel yaw: %.8f, diff: %.16f\n", yaw, yaw + fs_angle, std::fabs(NormalizeRad(yaw + fs_angle - target_angle)));
 
 			if (curState.ConstantYawSpeed) {
-				auto max_yaw_delta = curState.ConstantYawSpeedValue * vars.Frametime;
+				auto yaw_delta = curState.ConstantYawSpeedValue * vars.Frametime;
 				auto last_yaw = player.Viewangles[1];
 				auto accel_angle = postype == PositionType::GROUND ? M_PI / 4 : M_PI / 2;
 
 				if (right) {
-					yaw = last_yaw - max_yaw_delta;
+					yaw = last_yaw - yaw_delta;
 					accel_angle = -accel_angle;
 				} else {
-					yaw = last_yaw + max_yaw_delta;
+					yaw = last_yaw + yaw_delta;
 				}
 
 				yaw = AngleModRad(yaw * M_DEG2RAD);
