@@ -685,6 +685,13 @@ namespace HLStrafe
 			theta = right ? -theta : theta;
 
 			double yaw = vel_yaw - phi + theta;
+
+			if (curState.ConstantYawSpeed) {
+				auto yaw_delta = curState.ConstantYawSpeedValue * vars.Frametime;
+				auto last_yaw = static_cast<float>(NormalizeDeg(player.Viewangles[1]));
+				yaw = (right ? last_yaw - yaw_delta : last_yaw + yaw_delta) * M_DEG2RAD;
+			}
+
 			yaws[0] = AngleModRad(yaw);
 			// Very rare case of yaw == anglemod(yaw).
 			if (yaws[0] == yaw) {
@@ -769,6 +776,30 @@ namespace HLStrafe
 			}
 
 			// std::printf("player yaw: %.8f, accel yaw: %.8f, diff: %.16f\n", yaw, yaw + fs_angle, std::fabs(NormalizeRad(yaw + fs_angle - target_angle)));
+
+			if (curState.ConstantYawSpeed) {
+				auto yaw_delta = curState.ConstantYawSpeedValue * vars.Frametime;
+				auto last_yaw = player.Viewangles[1];
+				auto accel_angle = postype == PositionType::GROUND ? M_PI / 4 : M_PI / 2;
+
+				if (right) {
+					yaw = last_yaw - yaw_delta;
+					accel_angle = -accel_angle;
+				} else {
+					yaw = last_yaw + yaw_delta;
+				}
+
+				yaw = AngleModRad(yaw * M_DEG2RAD);
+
+				const auto& entry = VCTExactAngle::GetBestVector(vars, accel_angle, version);
+				S = entry.S;
+				F = entry.F;
+
+				fs_angle = NormalizeRad(Atan2(-S, F));
+
+				if (fs_angle < 0)
+					fs_angle += 2 * M_PI;
+			}
 
 			double avec[2] = { std::cos(yaw + fs_angle), std::sin(yaw + fs_angle) };
 			PlayerData pl = player;
@@ -1785,6 +1816,8 @@ namespace HLStrafe
 
 			auto vel_yaw = (version >= 2) ? 0 : out.Yaw * M_DEG2RAD;
 
+			curState.ConstantYawSpeed = false;
+
 			switch (frame.GetDir()) {
 			case HLTAS::StrafeDir::LEFT:
 				if (frame.GetType() == HLTAS::StrafeType::MAXACCEL)
@@ -1797,6 +1830,13 @@ namespace HLStrafe
 					auto yaw = static_cast<float>(SideStrafeMaxDeccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, false, strafed, curState, out, version) * M_RAD2DEG);
 					if (strafed)
 						out.Yaw = yaw;
+				}
+				else if (frame.GetType() == HLTAS::StrafeType::CONSTYAWSPEED) {
+					// Due to how things are passed around, it has to be this way.
+					curState.ConstantYawSpeed = true;
+					curState.ConstantYawSpeedValue = frame.GetYawspeed();
+					// Though it override yaws, having max accel is nice.
+					out.Yaw = static_cast<float>(SideStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, false, curState, out, version) * M_RAD2DEG);
 				}
 				break;
 
@@ -1811,6 +1851,11 @@ namespace HLStrafe
 					auto yaw = static_cast<float>(SideStrafeMaxDeccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, true, strafed, curState, out, version) * M_RAD2DEG);
 					if (strafed)
 						out.Yaw = yaw;
+				}
+				else if (frame.GetType() == HLTAS::StrafeType::CONSTYAWSPEED) {
+					curState.ConstantYawSpeed = true;
+					curState.ConstantYawSpeedValue = frame.GetYawspeed();
+					out.Yaw = static_cast<float>(SideStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, true, curState, out, version) * M_RAD2DEG);
 				}
 				break;
 
