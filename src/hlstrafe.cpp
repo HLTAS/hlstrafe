@@ -287,7 +287,6 @@ namespace HLStrafe
 		auto timeLeft = vars.Frametime;
 		auto allFraction = 0.0f;
 		auto numPlanes = 0;
-		auto blockedState = 0;
 		float planes[MAX_CLIP_PLANES][3];
 
 		for (auto bumpCount = 0; bumpCount < MAX_BUMPS; ++bumpCount) {
@@ -307,7 +306,6 @@ namespace HLStrafe
 			allFraction += tr.Fraction;
 			if (tr.AllSolid) {
 				VecScale<float, 3>(player.Velocity, 0, player.Velocity);
-				blockedState = 4;
 				break;
 			}
 			if (tr.Fraction > 0) {
@@ -317,11 +315,6 @@ namespace HLStrafe
 			}
 			if (tr.Fraction == 1)
 				break;
-
-			if (tr.PlaneNormal[2] > 0.7)
-				blockedState |= 1;
-			else if (tr.PlaneNormal[2] == 0)
-				blockedState |= 2;
 
 			timeLeft -= timeLeft * tr.Fraction;
 
