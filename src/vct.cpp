@@ -240,11 +240,11 @@ namespace VCT
 			// Find an entry that does satisfy the constraints.
 			auto best_distance = yaw_constraints.DistanceTo(yaw);
 			
-			size_t iterations = 0;
+			// size_t iterations = 0;
 
 			BestMatchIterator it(best_match_it, difference);
 			while (best_distance > 0 && it.HasNext()) {
-				++iterations;
+				// ++iterations;
 				const auto check_it = it.Next();
 
 				fs_angle = NormalizeRad(Atan2(-check_it->S, check_it->F));
