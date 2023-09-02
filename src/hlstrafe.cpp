@@ -1827,7 +1827,7 @@ namespace HLStrafe
 				else if (frame.GetType() == HLTAS::StrafeType::CONSTYAWSPEED) {
 					// Due to how things are passed around, it has to be this way.
 					curState.ConstantYawSpeed = true;
-					curState.ConstantYawSpeedValue = frame.GetYawspeed();
+					curState.ConstantYawSpeedValue = static_cast<float>(frame.GetYawspeed());
 					// Though it override yaws, having max accel is nice.
 					out.Yaw = static_cast<float>(SideStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, false, curState, out, version) * M_RAD2DEG);
 				}
@@ -1847,7 +1847,7 @@ namespace HLStrafe
 				}
 				else if (frame.GetType() == HLTAS::StrafeType::CONSTYAWSPEED) {
 					curState.ConstantYawSpeed = true;
-					curState.ConstantYawSpeedValue = frame.GetYawspeed();
+					curState.ConstantYawSpeedValue = static_cast<float>(frame.GetYawspeed());
 					out.Yaw = static_cast<float>(SideStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, true, curState, out, version) * M_RAD2DEG);
 				}
 				break;
