@@ -2184,6 +2184,9 @@ namespace HLStrafe
 		if (curState.TargetYawOverrideActive)
 			out.Yaw = static_cast<float>(AngleModDeg(curState.TargetYawOverride));
 
+		if (curState.PitchOverrideActive)
+			out.Pitch = static_cast<float>(curState.PitchOverride);
+
 		if (frame.Autojump)
 			curState.AutojumpsLeft = frame.GetAutojumpTimes();
 		if (frame.Ducktap) {

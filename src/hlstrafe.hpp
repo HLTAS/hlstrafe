@@ -116,7 +116,9 @@ namespace HLStrafe
 			LockTargetYaw(0),
 			TargetYawOverrideActive(false),
 			TargetYawOverride(0),
-			StrafeCycleFrameCount(0)
+			StrafeCycleFrameCount(0),
+			PitchOverrideActive(false),
+			PitchOverride(0)
 		{};
 
 		bool Jump;
@@ -179,6 +181,9 @@ namespace HLStrafe
 		HLTAS::StrafeDir MaxAccelYawOffsetDir;
 		// This is the value used for calculation.
 		float MaxAccelYawOffsetValue = 0;
+
+		bool PitchOverrideActive;
+		double PitchOverride;
 	};
 
 	struct TraceResult {
