@@ -2145,12 +2145,14 @@ namespace HLStrafe
 			const auto frame_accel =  static_cast<float>(frame.GetAcceleratedYawspeedAccel());
 			const auto frame_dir = frame.GetDir();
 
-			// Resets if we have a frame with different values.
-			// Stays the same if we don't though.
-			if (frame_target != curState.AcceleratedYawSpeedTarget
+			const auto frame_reset = frame_target != curState.AcceleratedYawSpeedTarget
 				|| frame_accel != curState.AcceleratedYawSpeedAccel
 				|| frame_dir != curState.AcceleratedYawSpeedDir
-				) {
+				;
+
+			// Resets if we have a frame with different values.
+			// Stays the same if we don't though.
+			if (frame_reset) {
 				// Slightly offset them as a hack to get 0 and frame_target value.
 				if (frame_accel < 0.0f)
 					// Accel is negative so subtract it to increase value
