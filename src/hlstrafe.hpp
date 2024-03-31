@@ -169,6 +169,15 @@ namespace HLStrafe
 		// Constant yawspeed
 		bool ConstantYawSpeed;
 		float ConstantYawSpeedValue;
+
+		// Accelerated yawspeed s5x
+		// These values to check whether the framebulk is different.
+		bool AcceleratedYawSpeed;
+		float AcceleratedYawSpeedTarget;
+		float AcceleratedYawSpeedAccel;
+		HLTAS::StrafeDir AcceleratedYawSpeedDir;
+		// This is the value used for calculation.
+		float AcceleratedYawSpeedValue = 0;
 	};
 
 	struct TraceResult {
