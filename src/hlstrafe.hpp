@@ -173,6 +173,7 @@ namespace HLStrafe
 		// Accelerated yawspeed s5x
 		// These values to check whether the framebulk is different.
 		bool AcceleratedYawSpeed;
+		float AcceleratedYawSpeedStart;
 		float AcceleratedYawSpeedTarget;
 		float AcceleratedYawSpeedAccel;
 		HLTAS::StrafeDir AcceleratedYawSpeedDir;

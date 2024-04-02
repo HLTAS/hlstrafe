@@ -2141,11 +2141,13 @@ namespace HLStrafe
 
 		curState.AcceleratedYawSpeed = frame.GetType() == HLTAS::StrafeType::ACCELYAWSPEED;
 		if (curState.AcceleratedYawSpeed) {
+			const auto frame_start = static_cast<float>(frame.GetAcceleratedYawspeedStart());
 			const auto frame_target = static_cast<float>(frame.GetAcceleratedYawspeedTarget());
 			const auto frame_accel =  static_cast<float>(frame.GetAcceleratedYawspeedAccel());
 			const auto frame_dir = frame.GetDir();
 
-			const auto frame_reset = frame_target != curState.AcceleratedYawSpeedTarget
+			const auto frame_reset = frame_start != curState.AcceleratedYawSpeedStart
+				|| frame_target != curState.AcceleratedYawSpeedTarget
 				|| frame_accel != curState.AcceleratedYawSpeedAccel
 				|| frame_dir != curState.AcceleratedYawSpeedDir
 				;
@@ -2158,25 +2160,31 @@ namespace HLStrafe
 					// Accel is negative so subtract it to increase value
 					curState.AcceleratedYawSpeedValue = frame_target - frame_accel;
 				else
-					curState.AcceleratedYawSpeedValue = 0.0f - frame_accel;
-			}
+					curState.AcceleratedYawSpeedValue = frame_start - frame_accel;
 
-			curState.AcceleratedYawSpeedTarget = frame_target;
-			curState.AcceleratedYawSpeedAccel = frame_accel;
-			curState.AcceleratedYawSpeedDir = frame_dir;
+				curState.AcceleratedYawSpeedStart = frame_start;
+				curState.AcceleratedYawSpeedTarget = frame_target;
+				curState.AcceleratedYawSpeedAccel = frame_accel;
+				curState.AcceleratedYawSpeedDir = frame_dir;
+			}
 
 			// If acceleration is negative, then we start from target and decreases.
 			if (frame_accel < 0.0f) {
 				// Accel is negative so add it to decrease value
 				curState.AcceleratedYawSpeedValue = 
-					std::max(curState.AcceleratedYawSpeedValue + frame_accel, 0.0f);
+				// Bounded by frame_start because we are doing a little criss crossing.
+				// For good reasons. It would make the TAS editor a lot easier to use.
+					std::max(curState.AcceleratedYawSpeedValue + frame_accel, frame_start);
 			} else {
 				curState.AcceleratedYawSpeedValue = 
 					std::min(
 						// Because it starts at the negative, max to make sure it is at least 0.
-						std::max(curState.AcceleratedYawSpeedValue + frame_accel, 0.0f), 
-							curState.AcceleratedYawSpeedTarget);
+						std::max(curState.AcceleratedYawSpeedValue + frame_accel, frame_start), 
+							frame_target);
 			}
+		} else {
+			// Must reset it because we want to calculate current yawspeed differently as well.
+			curState.AcceleratedYawSpeedValue = 0.0;
 		}
 
 		if (!frame.Strafe
