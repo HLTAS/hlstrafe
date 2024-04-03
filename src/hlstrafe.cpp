@@ -679,18 +679,14 @@ namespace HLStrafe
 
 			double yaw = vel_yaw - phi + theta;
 
-			if (curState.ConstantYawSpeed || curState.AcceleratedYawSpeed) {
-				double yaw_delta;
-
-				if (curState.ConstantYawSpeed) {
-					yaw_delta = curState.ConstantYawSpeedValue;
-				} else if (curState.AcceleratedYawSpeed) {
-					yaw_delta = curState.AcceleratedYawSpeedValue;
-				}
-
-				yaw_delta *= vars.Frametime;
+			if (curState.ConstantYawSpeed) {
+				auto yaw_delta = curState.ConstantYawSpeedValue * vars.Frametime;
 				auto last_yaw = static_cast<float>(NormalizeDeg(player.Viewangles[1]));
 				yaw = (right ? last_yaw - yaw_delta : last_yaw + yaw_delta) * M_DEG2RAD;
+			}
+
+			if (curState.MaxAccelYawOffset) {
+				yaw += curState.MaxAccelYawOffsetValue * M_DEG2RAD;
 			}
 
 			yaws[0] = AngleModRad(yaw);
@@ -778,16 +774,8 @@ namespace HLStrafe
 
 			// std::printf("player yaw: %.8f, accel yaw: %.8f, diff: %.16f\n", yaw, yaw + fs_angle, std::fabs(NormalizeRad(yaw + fs_angle - target_angle)));
 
-			if (curState.ConstantYawSpeed || curState.AcceleratedYawSpeed) {
-				double yaw_delta;
-
-				if (curState.ConstantYawSpeed) {
-					yaw_delta = curState.ConstantYawSpeedValue;
-				} else if (curState.AcceleratedYawSpeed) {
-					yaw_delta = curState.AcceleratedYawSpeedValue;
-				}
-
-				yaw_delta *= vars.Frametime;
+			if (curState.ConstantYawSpeed) {
+				auto yaw_delta = curState.ConstantYawSpeedValue * vars.Frametime;
 
 				auto last_yaw = player.Viewangles[1];
 				auto accel_angle = postype == PositionType::GROUND ? M_PI / 4 : M_PI / 2;
@@ -809,6 +797,10 @@ namespace HLStrafe
 
 				if (fs_angle < 0)
 					fs_angle += 2 * M_PI;
+			}
+
+			if (curState.MaxAccelYawOffset) {
+				yaw += curState.MaxAccelYawOffsetValue * M_INVU_DEG * M_U_RAD;
 			}
 
 			double avec[2] = { std::cos(yaw + fs_angle), std::sin(yaw + fs_angle) };
@@ -1847,7 +1839,7 @@ namespace HLStrafe
 					curState.ConstantYawSpeedValue = static_cast<float>(frame.GetYawspeed());
 					// Though it override yaws, having max accel is nice.
 					out.Yaw = static_cast<float>(SideStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, false, curState, out, version) * M_RAD2DEG);
-				} else if (frame.GetType() == HLTAS::StrafeType::ACCELYAWSPEED) {
+				} else if (frame.GetType() == HLTAS::StrafeType::MAXACCELYAWOFFSET) {
 					out.Yaw = static_cast<float>(SideStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, false, curState, out, version) * M_RAD2DEG);
 				}
 				break;
@@ -1868,7 +1860,7 @@ namespace HLStrafe
 					curState.ConstantYawSpeed = true;
 					curState.ConstantYawSpeedValue = static_cast<float>(frame.GetYawspeed());
 					out.Yaw = static_cast<float>(SideStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, true, curState, out, version) * M_RAD2DEG);
-				} else if (frame.GetType() == HLTAS::StrafeType::ACCELYAWSPEED) {
+				} else if (frame.GetType() == HLTAS::StrafeType::MAXACCELYAWOFFSET) {
 					out.Yaw = static_cast<float>(SideStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, true, curState, out, version) * M_RAD2DEG);
 				}
 				break;
@@ -2139,17 +2131,19 @@ namespace HLStrafe
 			curState.Parameters.Parameters.Yaw.Yaw = newValue;
 		}
 
-		curState.AcceleratedYawSpeed = frame.GetType() == HLTAS::StrafeType::ACCELYAWSPEED;
-		if (curState.AcceleratedYawSpeed) {
-			const auto frame_start = static_cast<float>(frame.GetAcceleratedYawspeedStart());
-			const auto frame_target = static_cast<float>(frame.GetAcceleratedYawspeedTarget());
-			const auto frame_accel =  static_cast<float>(frame.GetAcceleratedYawspeedAccel());
+		// This would only matters when we have some acceleration value for this type of strafing.
+		// Otherwise the final value would not change.
+		curState.MaxAccelYawOffset = frame.GetType() == HLTAS::StrafeType::MAXACCELYAWOFFSET;
+		if (curState.MaxAccelYawOffset) {
+			const auto frame_start = static_cast<float>(frame.GetMaxAccelYawOffsetStart());
+			const auto frame_target = static_cast<float>(frame.GetMaxAccelYawOffsetTarget());
+			const auto frame_accel =  static_cast<float>(frame.GetMaxAccelYawOffsetAccel());
 			const auto frame_dir = frame.GetDir();
 
-			const auto frame_reset = frame_start != curState.AcceleratedYawSpeedStart
-				|| frame_target != curState.AcceleratedYawSpeedTarget
-				|| frame_accel != curState.AcceleratedYawSpeedAccel
-				|| frame_dir != curState.AcceleratedYawSpeedDir
+			const auto frame_reset = frame_start != curState.MaxAccelYawOffsetStart
+				|| frame_target != curState.MaxAccelYawOffsetTarget
+				|| frame_accel != curState.MaxAccelYawOffsetAccel
+				|| frame_dir != curState.MaxAccelYawOffsetDir
 				;
 
 			// Resets if we have a frame with different values.
@@ -2158,33 +2152,29 @@ namespace HLStrafe
 				// Slightly offset them as a hack to get 0 and frame_target value.
 				if (frame_accel < 0.0f)
 					// Accel is negative so subtract it to increase value
-					curState.AcceleratedYawSpeedValue = frame_target - frame_accel;
+					curState.MaxAccelYawOffsetValue = frame_target - frame_accel;
 				else
-					curState.AcceleratedYawSpeedValue = frame_start - frame_accel;
+					curState.MaxAccelYawOffsetValue = frame_start - frame_accel;
 
-				curState.AcceleratedYawSpeedStart = frame_start;
-				curState.AcceleratedYawSpeedTarget = frame_target;
-				curState.AcceleratedYawSpeedAccel = frame_accel;
-				curState.AcceleratedYawSpeedDir = frame_dir;
+				curState.MaxAccelYawOffsetStart = frame_start;
+				curState.MaxAccelYawOffsetTarget = frame_target;
+				curState.MaxAccelYawOffsetAccel = frame_accel;
+				curState.MaxAccelYawOffsetDir = frame_dir;
 			}
 
-			// If acceleration is negative, then we start from target and decreases.
 			if (frame_accel < 0.0f) {
 				// Accel is negative so add it to decrease value
-				curState.AcceleratedYawSpeedValue = 
+				curState.MaxAccelYawOffsetValue = 
 				// Bounded by frame_start because we are doing a little criss crossing.
 				// For good reasons. It would make the TAS editor a lot easier to use.
-					std::max(curState.AcceleratedYawSpeedValue + frame_accel, frame_start);
+					std::max(curState.MaxAccelYawOffsetValue + frame_accel, frame_start);
 			} else {
-				curState.AcceleratedYawSpeedValue = 
+				curState.MaxAccelYawOffsetValue = 
 					std::min(
 						// Because it starts at the negative, max to make sure it is at least 0.
-						std::max(curState.AcceleratedYawSpeedValue + frame_accel, frame_start), 
+						std::max(curState.MaxAccelYawOffsetValue + frame_accel, frame_start), 
 							frame_target);
 			}
-		} else {
-			// Must reset it because we want to calculate current yawspeed differently as well.
-			curState.AcceleratedYawSpeedValue = 0.0;
 		}
 
 		if (!frame.Strafe
