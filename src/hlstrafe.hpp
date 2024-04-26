@@ -172,7 +172,7 @@ namespace HLStrafe
 
 		// Maximum acceleration yaw offset s5x
 		// These values to check whether the framebulk is different.
-		bool MaxAccelYawOffset;
+		bool MaxAccelYawOffset = false;
 		float MaxAccelYawOffsetStart;
 		float MaxAccelYawOffsetTarget;
 		float MaxAccelYawOffsetAccel;

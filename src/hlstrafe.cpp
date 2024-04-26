@@ -803,7 +803,7 @@ namespace HLStrafe
 
 			if (curState.MaxAccelYawOffset) {
 				const auto offset = right ? -curState.MaxAccelYawOffsetValue : curState.MaxAccelYawOffsetValue;
-				yaw += offset * M_INVU_DEG * M_U_RAD;
+				yaw += offset * M_DEG2RAD;
 			}
 
 			double avec[2] = { std::cos(yaw + fs_angle), std::sin(yaw + fs_angle) };
@@ -2146,34 +2146,27 @@ namespace HLStrafe
 				|| frame_dir != curState.MaxAccelYawOffsetDir
 				;
 
+			// This means negative acceleration would have start and target flipped.
+			// This works well if someone wants to have negative acceleration bulk after a normal bulk.
+			// They don't need to change the start and target in the yaw field.
+			curState.MaxAccelYawOffsetValue = 
+				std::min(
+					std::max(curState.MaxAccelYawOffsetValue + frame_accel, frame_start), 
+						frame_target);
+
 			// Resets if we have a frame with different values.
 			// Stays the same if we don't though.
 			if (frame_reset) {
-				// Slightly offset them as a hack to get 0 and frame_target value.
+				// Flipping the start and target depending on sign of acceleration.
 				if (frame_accel < 0.0f)
-					// Accel is negative so subtract it to increase value
-					curState.MaxAccelYawOffsetValue = frame_target - frame_accel;
+					curState.MaxAccelYawOffsetValue = frame_target;
 				else
-					curState.MaxAccelYawOffsetValue = frame_start - frame_accel;
+					curState.MaxAccelYawOffsetValue = frame_start;
 
 				curState.MaxAccelYawOffsetStart = frame_start;
 				curState.MaxAccelYawOffsetTarget = frame_target;
 				curState.MaxAccelYawOffsetAccel = frame_accel;
 				curState.MaxAccelYawOffsetDir = frame_dir;
-			}
-
-			if (frame_accel < 0.0f) {
-				// Accel is negative so add it to decrease value
-				curState.MaxAccelYawOffsetValue = 
-				// Bounded by frame_start because we are doing a little criss crossing.
-				// For good reasons. It would make the TAS editor a lot easier to use.
-					std::max(curState.MaxAccelYawOffsetValue + frame_accel, frame_start);
-			} else {
-				curState.MaxAccelYawOffsetValue = 
-					std::min(
-						// Because it starts at the negative, max to make sure it is at least 0.
-						std::max(curState.MaxAccelYawOffsetValue + frame_accel, frame_start), 
-							frame_target);
 			}
 		}
 
