@@ -688,6 +688,7 @@ namespace HLStrafe
 			if (curState.MaxAccelYawOffset) {
 				// Flip it like this so leftright strafing works.
 				const auto offset = right ? -curState.MaxAccelYawOffsetValue : curState.MaxAccelYawOffsetValue;
+				// No need to angle mod here because yaw will be anglemodded later
 				yaw += offset * M_DEG2RAD;
 			}
 
@@ -803,7 +804,7 @@ namespace HLStrafe
 
 			if (curState.MaxAccelYawOffset) {
 				const auto offset = right ? -curState.MaxAccelYawOffsetValue : curState.MaxAccelYawOffsetValue;
-				yaw += offset * M_DEG2RAD;
+				yaw += AngleModRad(offset * M_DEG2RAD);
 			}
 
 			double avec[2] = { std::cos(yaw + fs_angle), std::sin(yaw + fs_angle) };
