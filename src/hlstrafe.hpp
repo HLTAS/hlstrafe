@@ -169,6 +169,16 @@ namespace HLStrafe
 		// Constant yawspeed
 		bool ConstantYawSpeed;
 		float ConstantYawSpeedValue;
+
+		// Maximum acceleration yaw offset s5x
+		// These values to check whether the framebulk is different.
+		bool MaxAccelYawOffset = false;
+		float MaxAccelYawOffsetStart;
+		float MaxAccelYawOffsetTarget;
+		float MaxAccelYawOffsetAccel;
+		HLTAS::StrafeDir MaxAccelYawOffsetDir;
+		// This is the value used for calculation.
+		float MaxAccelYawOffsetValue = 0;
 	};
 
 	struct TraceResult {

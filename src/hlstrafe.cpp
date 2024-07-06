@@ -685,6 +685,13 @@ namespace HLStrafe
 				yaw = (right ? last_yaw - yaw_delta : last_yaw + yaw_delta) * M_DEG2RAD;
 			}
 
+			if (curState.MaxAccelYawOffset) {
+				// Flip it like this so leftright strafing works.
+				const auto offset = right ? -curState.MaxAccelYawOffsetValue : curState.MaxAccelYawOffsetValue;
+				// No need to angle mod here because yaw will be anglemodded later
+				yaw += offset * M_DEG2RAD;
+			}
+
 			yaws[0] = AngleModRad(yaw);
 			// Very rare case of yaw == anglemod(yaw).
 			if (yaws[0] == yaw) {
@@ -772,6 +779,7 @@ namespace HLStrafe
 
 			if (curState.ConstantYawSpeed) {
 				auto yaw_delta = curState.ConstantYawSpeedValue * vars.Frametime;
+
 				auto last_yaw = player.Viewangles[1];
 				auto accel_angle = postype == PositionType::GROUND ? M_PI / 4 : M_PI / 2;
 
@@ -792,6 +800,11 @@ namespace HLStrafe
 
 				if (fs_angle < 0)
 					fs_angle += 2 * M_PI;
+			}
+
+			if (curState.MaxAccelYawOffset) {
+				const auto offset = right ? -curState.MaxAccelYawOffsetValue : curState.MaxAccelYawOffsetValue;
+				yaw += AngleModRad(offset * M_DEG2RAD);
 			}
 
 			double avec[2] = { std::cos(yaw + fs_angle), std::sin(yaw + fs_angle) };
@@ -1268,6 +1281,7 @@ namespace HLStrafe
 
 		switch (type) {
 		default:
+		case HLTAS::StrafeType::MAXACCELYAWOFFSET:
 		case HLTAS::StrafeType::MAXACCEL: return YawStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, yaw, curState, out, version);
 		case HLTAS::StrafeType::MAXANGLE: return YawStrafeMaxAngle(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, yaw, curState, out, version);
 		case HLTAS::StrafeType::MAXDECCEL: return YawStrafeMaxDeccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, yaw, strafed, curState, out, version);
@@ -1813,7 +1827,7 @@ namespace HLStrafe
 
 			switch (frame.GetDir()) {
 			case HLTAS::StrafeDir::LEFT:
-				if (frame.GetType() == HLTAS::StrafeType::MAXACCEL)
+				if (frame.GetType() == HLTAS::StrafeType::MAXACCEL || frame.GetType() == HLTAS::StrafeType::MAXACCELYAWOFFSET)
 					out.Yaw = static_cast<float>(SideStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, false, curState, out, version) * M_RAD2DEG);
 				else if (frame.GetType() == HLTAS::StrafeType::MAXANGLE)
 					out.Yaw = static_cast<float>(SideStrafeMaxAngle(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, false, curState, out, version) * M_RAD2DEG);
@@ -1834,7 +1848,7 @@ namespace HLStrafe
 				break;
 
 			case HLTAS::StrafeDir::RIGHT:
-				if (frame.GetType() == HLTAS::StrafeType::MAXACCEL)
+				if (frame.GetType() == HLTAS::StrafeType::MAXACCEL || frame.GetType() == HLTAS::StrafeType::MAXACCELYAWOFFSET)
 					out.Yaw = static_cast<float>(SideStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, true, curState, out, version) * M_RAD2DEG);
 				else if (frame.GetType() == HLTAS::StrafeType::MAXANGLE)
 					out.Yaw = static_cast<float>(SideStrafeMaxAngle(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, true, curState, out, version) * M_RAD2DEG);
@@ -1853,7 +1867,7 @@ namespace HLStrafe
 				break;
 
 			case HLTAS::StrafeDir::BEST:
-				if (frame.GetType() == HLTAS::StrafeType::MAXACCEL)
+				if (frame.GetType() == HLTAS::StrafeType::MAXACCEL || frame.GetType() == HLTAS::StrafeType::MAXACCELYAWOFFSET)
 					out.Yaw = static_cast<float>(BestStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, curState, out, version) * M_RAD2DEG);
 				else if (frame.GetType() == HLTAS::StrafeType::MAXANGLE)
 					out.Yaw = static_cast<float>(BestStrafeMaxAngle(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, curState, out, version) * M_RAD2DEG);
@@ -1867,7 +1881,7 @@ namespace HLStrafe
 				break;
 
 			case HLTAS::StrafeDir::YAW:
-				if (frame.GetType() == HLTAS::StrafeType::MAXACCEL)
+				if (frame.GetType() == HLTAS::StrafeType::MAXACCEL || frame.GetType() == HLTAS::StrafeType::MAXACCELYAWOFFSET)
 					out.Yaw = static_cast<float>(YawStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, frame.GetYaw() * M_DEG2RAD, curState, out, version) * M_RAD2DEG);
 				else if (frame.GetType() == HLTAS::StrafeType::MAXANGLE)
 					out.Yaw = static_cast<float>(YawStrafeMaxAngle(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, frame.GetYaw() * M_DEG2RAD, curState, out, version) * M_RAD2DEG);
@@ -1899,7 +1913,7 @@ namespace HLStrafe
 				if (frame.GetDir() == HLTAS::StrafeDir::RIGHT_LEFT)
 					right = !right;
 
-				if (frame.GetType() == HLTAS::StrafeType::MAXACCEL)
+				if (frame.GetType() == HLTAS::StrafeType::MAXACCEL || frame.GetType() == HLTAS::StrafeType::MAXACCELYAWOFFSET)
 					out.Yaw = static_cast<float>(SideStrafeMaxAccel(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, right, curState, out, version) * M_RAD2DEG);
 				else if (frame.GetType() == HLTAS::StrafeType::MAXANGLE)
 					out.Yaw = static_cast<float>(SideStrafeMaxAngle(player, vars, postype, wishspeed, strafeButtons, useGivenButtons, usedButton, vel_yaw, right, curState, out, version) * M_RAD2DEG);
@@ -2117,6 +2131,46 @@ namespace HLStrafe
 
 			curState.Parameters.Parameters.Yaw.Yaw = newValue;
 		}
+
+		// This would only matters when we have some acceleration value for this type of strafing.
+		// Otherwise the final value would not change.
+		curState.MaxAccelYawOffset = frame.GetType() == HLTAS::StrafeType::MAXACCELYAWOFFSET;
+		if (curState.MaxAccelYawOffset) {
+			const auto frame_start = static_cast<float>(frame.GetMaxAccelYawOffsetStart());
+			const auto frame_target = static_cast<float>(frame.GetMaxAccelYawOffsetTarget());
+			const auto frame_accel =  static_cast<float>(frame.GetMaxAccelYawOffsetAccel());
+			const auto frame_dir = frame.GetDir();
+
+			const auto frame_reset = frame_start != curState.MaxAccelYawOffsetStart
+				|| frame_target != curState.MaxAccelYawOffsetTarget
+				|| frame_accel != curState.MaxAccelYawOffsetAccel
+				|| frame_dir != curState.MaxAccelYawOffsetDir
+				;
+
+			// This means negative acceleration would have start and target flipped.
+			// This works well if someone wants to have negative acceleration bulk after a normal bulk.
+			// They don't need to change the start and target in the yaw field.
+			curState.MaxAccelYawOffsetValue = 
+				std::min(
+					std::max(curState.MaxAccelYawOffsetValue + frame_accel, frame_start), 
+						frame_target);
+
+			// Resets if we have a frame with different values.
+			// Stays the same if we don't though.
+			if (frame_reset) {
+				// Flipping the start and target depending on sign of acceleration.
+				if (frame_accel < 0.0f)
+					curState.MaxAccelYawOffsetValue = frame_target;
+				else
+					curState.MaxAccelYawOffsetValue = frame_start;
+
+				curState.MaxAccelYawOffsetStart = frame_start;
+				curState.MaxAccelYawOffsetTarget = frame_target;
+				curState.MaxAccelYawOffsetAccel = frame_accel;
+				curState.MaxAccelYawOffsetDir = frame_dir;
+			}
+		}
+
 		if (!frame.Strafe
 				|| curState.Algorithm != HLTAS::StrafingAlgorithm::VECTORIAL
 				|| curState.Parameters.Type != HLTAS::ConstraintsType::VELOCITY_LOCK)
